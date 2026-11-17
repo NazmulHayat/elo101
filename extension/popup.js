@@ -1,40 +1,12 @@
-const APP_URL = "https://elo101.vercel.app/";
-
-function canonicalGameUrl(rawUrl) {
-  let url;
-  try {
-    url = new URL(rawUrl);
-  } catch {
-    return null;
-  }
-
-  const host = url.hostname.toLowerCase().replace(/^www\./, "");
-  if (host === "chess.com") {
-    const gamePage = url.pathname.match(/^\/game\/(\d+)\/?$/i);
-    if (gamePage) return `https://www.chess.com/game/live/${gamePage[1]}`;
-    const match = url.pathname.match(/^\/(?:game|analysis\/game)\/(live|daily)\/(\d+)\/?$/i);
-    if (!match) return null;
-    return `https://www.chess.com/game/${match[1].toLowerCase()}/${match[2]}`;
-  }
-
-  if (host === "lichess.org") {
-    const match = url.pathname.match(/^\/(?:game\/)?([a-z0-9]{8})(?:\/[^/]*)?\/?$/i);
-    if (!match) return null;
-    return `https://lichess.org/${match[1]}`;
-  }
-
-  return null;
-}
-
 const message = document.getElementById("message");
 const reviewButton = document.getElementById("review");
 let gameUrl = null;
 let playerUsername = null;
 
 chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
-  gameUrl = canonicalGameUrl(tab?.url ?? "");
+  gameUrl = Elo101GameLink.canonicalGameUrl(tab?.url ?? "");
   if (!gameUrl) {
-    message.textContent = "Open a completed Chess.com or Lichess game to start a review.";
+    message.textContent = "Open a Chess.com or Lichess game to review it.";
     return;
   }
 
@@ -43,9 +15,14 @@ chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
       const [{ result }] = await chrome.scripting.executeScript({
         target: { tabId: tab.id },
         func: () => {
-          const links = [...document.querySelectorAll('a[href*="/member/"], a[href*="/members/"]')];
-          const match = links.map((link) => new URL(link.href).pathname.match(/^\/members?\/([^/]+)/i)).find(Boolean);
-          return match?.[1] ?? null;
+          const links = document.querySelectorAll('a[href*="/member/"], a[href*="/members/"]');
+          for (const link of links) {
+            try {
+              const match = new URL(link.href).pathname.match(/^\/members?\/([^/]+)/i);
+              if (match) return match[1];
+            } catch { /* Ignore malformed page links. */ }
+          }
+          return null;
         },
       });
       playerUsername = result;
@@ -55,15 +32,12 @@ chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
   }
 
   message.textContent = playerUsername
-    ? `Game found for ${playerUsername}. Open it in Elo101 for your review.`
-    : "Game found. Open it in Elo101 for your review.";
+    ? `Ready to review ${playerUsername}'s game.`
+    : "Game link ready to review.";
   reviewButton.disabled = false;
 });
 
 reviewButton.addEventListener("click", () => {
   if (!gameUrl) return;
-  const destination = new URL(APP_URL);
-  destination.searchParams.set("game", gameUrl);
-  if (playerUsername) destination.searchParams.set("user", playerUsername);
-  chrome.tabs.create({ url: destination.toString() });
+  chrome.tabs.create({ url: Elo101GameLink.destination(gameUrl, playerUsername) });
 });

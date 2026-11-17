@@ -7,18 +7,30 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <main class="card">
-      <div class="brand">
-        <div class="mark" aria-hidden="true">♞</div>
-        <div>
-          <p class="eyebrow">ELO101</p>
-          <h1>Game review</h1>
+    <main class="popup">
+      <header class="brand">
+        <img class="brand-mark" src="icons/icon-48.png" alt="" width="38" height="38" />
+        <div class="brand-copy">
+          <p class="eyebrow">ELO101 <span>·</span> CHESS REVIEW</p>
+          <h1>Review a game</h1>
         </div>
-      </div>
-      <p id="message" class="message" role="status" aria-live="polite">Checking this page…</p>
-      <button id="review" type="button" disabled>Review game <span aria-hidden="true">↗</span></button>
-      <p class="hint">Opens elo101 with this game link and, on Chess.com, a player name if found. Analysis runs in your browser. <a href="https://elo101.vercel.app/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a></p>
+      </header>
+
+      <section class="page-check" aria-label="Current page status">
+        <div class="section-label"><span class="status-dot" aria-hidden="true"></span> CURRENT PAGE</div>
+        <p id="message" class="message" role="status" aria-live="polite">Checking this page…</p>
+      </section>
+
+      <button id="review" type="button" disabled>
+        <span>Review game</span><span class="button-arrow" aria-hidden="true">↗</span>
+      </button>
+
+      <footer class="footer">
+        <span>Chess.com · Lichess</span>
+        <a href="https://elo101.vercel.app/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+      </footer>
     </main>
+    <script src="game-link.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>
