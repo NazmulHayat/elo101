@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · elo101</title>
+  <style>
+    body{font:16px/1.65 system-ui,-apple-system,sans-serif;max-width:720px;margin:48px auto;padding:0 20px;color:#17221f;background:#f5f7f4}
+    h1,h2{line-height:1.2;color:#132b1c}h1{font-size:2rem}h2{font-size:1.25rem;margin-top:2rem}
+    a{color:#237348}main{background:#fff;border:1px solid #e3e9e4;border-radius:16px;padding:32px}
+  </style>
+</head>
+<body><main>
+  <p><a href="/">← elo101</a></p>
+  <h1>Privacy</h1>
+  <p>Last updated November 17, 2026.</p>
+  <p>The elo101 Chrome extension helps you open a completed Chess.com or Lichess game in the elo101 review website. The review engine and rating models run in your browser. We do not require an account or sell your data.</p>
+  <h2>What the extension uses</h2>
+  <p>When you click the extension, it reads the current tab’s URL to identify a supported game. On Chess.com, it may read a player name from links on that page to find the game in public archives. Clicking “Review game” opens elo101 with the game URL and, if found, that player name in the destination URL. The extension does not monitor other tabs or run in the background.</p>
+  <h2>What the website uses</h2>
+  <p>To import a game, your browser requests public game data directly from Chess.com or Lichess. Stockfish analysis, move labels, and ratings are calculated locally. The site saves up to five recently reviewed games, including their PGN, plus remembered usernames and preferences in your browser’s local storage. You can remove these by clearing site data for elo101.vercel.app in Chrome settings.</p>
+  <p>The destination URL is sent to our hosting provider, Vercel, when the page opens. The site removes the game and player parameters from the visible URL after reading them. Normal website requests may also send technical data such as your IP address to Vercel. Google Fonts is used to load the site’s typefaces. We do not use advertising or analytics in the extension or site.</p>
+  <h2>Limited use</h2>
+  <p>Information accessed through Chrome permissions is used only to provide the game review handoff. We do not use or transfer it for advertising, profiling, or unrelated purposes. Our use of information received from Chrome APIs follows the Chrome Web Store User Data Policy, including its Limited Use requirements.</p>
+  <h2>Contact</h2>
+  <p>For privacy questions, open an issue at <a href="https://github.com/NazmulHayat/elo101/issues">the elo101 repository</a>.</p>
+</main></body>
+</html>
