@@ -16,7 +16,7 @@ function canonicalGameUrl(rawUrl) {
   }
 
   if (host === "lichess.org") {
-    const match = url.pathname.match(/^\/([a-z0-9]{8})(?:\/[^/]*)?\/?$/i);
+    const match = url.pathname.match(/^\/(?:game\/)?([a-z0-9]{8})(?:\/[^/]*)?\/?$/i);
     if (!match) return null;
     return `https://lichess.org/${match[1]}`;
   }
