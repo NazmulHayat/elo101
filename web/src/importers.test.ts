@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { chesscomGames, classifyTimeClass, GAMES_LIMIT, lichessGames, resultFor } from './importers'
+import { chesscomGames, classifyTimeClass, gameFromUrl, GAMES_LIMIT, lichessGames, resultFor } from './importers'
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } })
@@ -101,5 +101,35 @@ describe('helpers', () => {
     expect(classifyTimeClass(1500)).toBe('classical')
     expect(resultFor('A', 'B', 'a', '1-0')).toBe('win')
     expect(resultFor('A', 'B', 'b', '1-0')).toBe('loss')
+  })
+
+  it('imports a Lichess game URL through its PGN export', async () => {
+    const f = vi.fn(async () => new Response('[Result "1-0"]\n\n1. e4 e5 *', { status: 200 }))
+    const game = await gameFromUrl('https://lichess.org/abcdefgh', undefined, f as unknown as typeof fetch)
+    expect(game.pgn).toContain('1. e4 e5')
+    expect(f.mock.calls[0][0]).toBe('https://lichess.org/game/export/abcdefgh?clocks=false&evals=false')
+  })
+
+  it('finds a Chess.com game in the supplied player’s recent archive', async () => {
+    const f = vi.fn(async (url: string) => url.endsWith('/archives')
+      ? json({ archives: ['https://api.chess.com/pub/player/alice/games/2026/09', 'https://api.chess.com/pub/player/alice/games/2026/10'] })
+      : json({ games: [ccGame(12345)] }))
+    const game = await gameFromUrl('https://www.chess.com/game/live/12345', 'Alice', f as unknown as typeof fetch)
+    expect(game.pgn).toContain('1. e4 e5')
+    expect(game.side).toBe('white')
+  })
+
+  it('rejects malformed and unsupported game links', async () => {
+    await expect(gameFromUrl('not a url')).rejects.toThrow(/valid Chess.com or Lichess/)
+    await expect(gameFromUrl('https://example.com/abcdefgh')).rejects.toThrow(/Only Chess.com and Lichess/)
+    await expect(gameFromUrl('https://lichess.org/abcdefgh/other')).rejects.toThrow(/Lichess game URL/)
+    await expect(gameFromUrl('https://www.chess.com/game/live/123/extra', 'alice')).rejects.toThrow(/Chess.com game URL/)
+  })
+
+  it('does not import a Chess.com nonstandard variant', async () => {
+    const f = vi.fn(async (url: string) => url.endsWith('/archives')
+      ? json({ archives: ['archive'] })
+      : json({ games: [ccGame(12345, { rules: 'chess960' })] }))
+    await expect(gameFromUrl('https://www.chess.com/game/live/12345', 'Alice', f as unknown as typeof fetch)).rejects.toThrow(/Could not find this game/)
   })
 })

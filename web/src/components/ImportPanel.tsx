@@ -1,13 +1,13 @@
 import { useRef, useState } from 'react'
 import { recentGames } from '../lib/recent'
 import { SAMPLE_PGN } from '../lib/sample'
-import { fetchGames } from '../api'
+import { fetchGameUrl, fetchGames } from '../api'
 import { shortDate, timeClassLabel } from '../format'
 import type { GameListItem } from '../types'
 
-type Tab = 'chesscom' | 'lichess' | 'pgn'
+type Tab = 'chesscom' | 'lichess' | 'link' | 'pgn'
 
-const TAB_NAMES: Record<Tab, string> = { chesscom: 'Chess.com', lichess: 'Lichess', pgn: 'Paste PGN' }
+const TAB_NAMES: Record<Tab, string> = { chesscom: 'Chess.com', lichess: 'Lichess', link: 'Game link', pgn: 'Paste PGN' }
 
 function remembered(key: string): string {
   try {
@@ -25,16 +25,19 @@ function remember(key: string, value: string) {
   }
 }
 
-export function ImportPanel({ onAnalyze }: { onAnalyze: (pgn: string, you?: 'white' | 'black') => void }) {
+export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, you?: 'white' | 'black') => void; handoff?: { url: string; user: string } }) {
   const [tab, setTab] = useState<Tab>(() => {
+    if (handoff) return 'link'
     const saved = remembered('cc.tab')
-    return saved === 'lichess' || saved === 'pgn' ? saved : 'chesscom'
+    return saved === 'lichess' || saved === 'link' || saved === 'pgn' ? saved : 'chesscom'
   })
   const [user, setUser] = useState(() => remembered(`cc.user.${tab}`))
   const [games, setGames] = useState<GameListItem[] | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pgn, setPgn] = useState('')
+  const [gameUrl, setGameUrl] = useState(handoff?.url ?? '')
+  const [gameUser, setGameUser] = useState(handoff?.user ?? '')
   const [recent] = useState(recentGames)
   const request = useRef(0)
 
@@ -50,7 +53,7 @@ export function ImportPanel({ onAnalyze }: { onAnalyze: (pgn: string, you?: 'whi
 
   async function find(e: React.FormEvent) {
     e.preventDefault()
-    if (tab === 'pgn' || !user.trim()) return
+    if (tab === 'pgn' || tab === 'link' || !user.trim()) return
     const id = ++request.current
     setLoading(true)
     setError(null)
@@ -70,6 +73,21 @@ export function ImportPanel({ onAnalyze }: { onAnalyze: (pgn: string, you?: 'whi
 
   const me = user.trim().toLowerCase()
 
+  async function importLink(e: React.FormEvent) {
+    e.preventDefault()
+    if (!gameUrl.trim()) return
+    setLoading(true)
+    setError(null)
+    try {
+      const game = await fetchGameUrl(gameUrl.trim(), gameUser.trim() || undefined)
+      onAnalyze(game.pgn, game.side)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="panel-body">
       <div className="tabs" role="group" aria-label="Import source">
@@ -80,7 +98,16 @@ export function ImportPanel({ onAnalyze }: { onAnalyze: (pgn: string, you?: 'whi
         ))}
       </div>
 
-      {tab === 'pgn' ? (
+      {tab === 'link' ? (
+        <form className="import-form" onSubmit={importLink}>
+          <input className="field" type="url" value={gameUrl} onChange={(e) => setGameUrl(e.target.value)} placeholder="https://lichess.org/… or chess.com/game/live/…" aria-label="Game URL" autoComplete="off" spellCheck={false} />
+          {gameUrl.toLowerCase().includes('chess.com') && <input className="field" value={gameUser} onChange={(e) => setGameUser(e.target.value)} placeholder="Chess.com player username" aria-label="Chess.com player username" autoComplete="off" spellCheck={false} />}
+          <button type="submit" className="btn btn-primary btn-block" disabled={!gameUrl.trim() || loading}>
+            {loading ? 'Loading…' : 'Analyze game'}
+          </button>
+          {error && <div className="error" role="alert">{error}</div>}
+        </form>
+      ) : tab === 'pgn' ? (
         <form
           className="import-form"
           onSubmit={(e) => {
