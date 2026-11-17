@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Elo101 Game Review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Review a completed Chess.com or Lichess game with Elo101.",
   "permissions": ["activeTab", "scripting"],
   "icons": {

@@ -10,6 +10,8 @@ function canonicalGameUrl(rawUrl) {
 
   const host = url.hostname.toLowerCase().replace(/^www\./, "");
   if (host === "chess.com") {
+    const gamePage = url.pathname.match(/^\/game\/(\d+)\/?$/i);
+    if (gamePage) return `https://www.chess.com/game/live/${gamePage[1]}`;
     const match = url.pathname.match(/^\/(?:game|analysis\/game)\/(live|daily)\/(\d+)\/?$/i);
     if (!match) return null;
     return `https://www.chess.com/game/${match[1].toLowerCase()}/${match[2]}`;

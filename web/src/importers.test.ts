@@ -117,6 +117,8 @@ describe('helpers', () => {
     const game = await gameFromUrl('https://www.chess.com/game/live/12345', 'Alice', f as unknown as typeof fetch)
     expect(game.pgn).toContain('1. e4 e5')
     expect(game.side).toBe('white')
+    const shortUrlGame = await gameFromUrl('https://www.chess.com/game/12345', 'Alice', f as unknown as typeof fetch)
+    expect(shortUrlGame.pgn).toBe(game.pgn)
   })
 
   it('rejects malformed and unsupported game links', async () => {
