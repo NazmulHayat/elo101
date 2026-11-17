@@ -197,14 +197,15 @@ export async function gameFromUrl(rawUrl: string, user?: string, f: Fetch = fetc
 
   if (host === 'chess.com') {
     const match = url.pathname.match(/^\/(?:game\/(live|daily)|analysis\/game\/(live|daily))\/(\d+)\/?$/i)
-    if (!match) {
+    const shortGameId = url.pathname.match(/^\/game\/(\d+)\/?$/i)?.[1]
+    if (!match && !shortGameId) {
       throw new Error('That doesn’t look like a Chess.com game URL.')
     }
     if (!user?.trim()) throw new Error('Chess.com needs a player username to find this game. Use the extension handoff from the game page or paste the PGN.')
-    if ((match[1] ?? match[2]).toLowerCase() !== 'live') {
+    if (match && (match[1] ?? match[2]).toLowerCase() !== 'live') {
       throw new Error('Chess.com daily game links cannot be imported yet. Open the game and paste its PGN here.')
     }
-    const gameId = match[3]
+    const gameId = shortGameId ?? match![3]
     const archivesResponse = await get(f, `https://api.chess.com/pub/player/${encodeURIComponent(user.trim().toLowerCase())}/games/archives`, 'Chess.com')
     if (!archivesResponse.ok) throw failure('Chess.com', user.trim(), archivesResponse.status)
     const archives: string[] = (await archivesResponse.json()).archives ?? []
