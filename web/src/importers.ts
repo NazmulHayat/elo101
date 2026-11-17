@@ -171,3 +171,63 @@ export async function lichessGames(user: string, f: Fetch = fetch): Promise<Game
 export function fetchGamesDirect(site: 'chesscom' | 'lichess', user: string, f: Fetch = fetch): Promise<GameListItem[]> {
   return site === 'chesscom' ? chesscomGames(user, f) : lichessGames(user, f)
 }
+
+/** Fetch a completed public game from a share URL when the site exposes a browser-readable PGN. */
+export async function gameFromUrl(rawUrl: string, user?: string, f: Fetch = fetch): Promise<{ pgn: string; side?: 'white' | 'black' }> {
+  let url: URL
+  try {
+    url = new URL(rawUrl)
+  } catch {
+    throw new Error('Enter a valid Chess.com or Lichess game URL.')
+  }
+
+  const host = url.hostname.toLowerCase().replace(/^www\./, '')
+  if (host === 'lichess.org') {
+    const path = url.pathname.match(/^\/([a-zA-Z0-9]{8,12})\/?$/)
+    const id = path?.[1]
+    if (!id || !/^[a-zA-Z0-9]{8,12}$/.test(id)) throw new Error('That doesn’t look like a Lichess game URL.')
+    const response = await get(f, `https://lichess.org/game/export/${encodeURIComponent(id)}?clocks=false&evals=false`, 'Lichess', {
+      headers: { Accept: 'application/x-chess-pgn' },
+    })
+    if (!response.ok) throw failure('Lichess', id, response.status)
+    const pgn = await response.text()
+    if (!pgn.trim() || !pgn.includes('\n')) throw new Error('Lichess did not return a completed game PGN.')
+    return { pgn }
+  }
+
+  if (host === 'chess.com') {
+    const match = url.pathname.match(/^\/(?:game\/(live|daily)|analysis\/game\/(live|daily))\/(\d+)\/?$/i)
+    if (!match) {
+      throw new Error('That doesn’t look like a Chess.com game URL.')
+    }
+    if (!user?.trim()) throw new Error('Chess.com needs a player username to find this game. Use the extension handoff from the game page or paste the PGN.')
+    if ((match[1] ?? match[2]).toLowerCase() !== 'live') {
+      throw new Error('Chess.com daily game links cannot be imported yet. Open the game and paste its PGN here.')
+    }
+    const gameId = match[3]
+    const archivesResponse = await get(f, `https://api.chess.com/pub/player/${encodeURIComponent(user.trim().toLowerCase())}/games/archives`, 'Chess.com')
+    if (!archivesResponse.ok) throw failure('Chess.com', user.trim(), archivesResponse.status)
+    const archives: string[] = (await archivesResponse.json()).archives ?? []
+    for (const archiveUrl of archives.slice(-12).reverse()) {
+      const archiveResponse = await get(f, archiveUrl, 'Chess.com')
+      if (!archiveResponse.ok) continue
+      const games: ChesscomGame[] = (await archiveResponse.json()).games ?? []
+      const game = games.find((item) => {
+        if (!item.url || item.rules !== 'chess') return false
+        try {
+          const archivedUrl = new URL(item.url)
+          return archivedUrl.hostname.toLowerCase().replace(/^www\./, '') === 'chess.com'
+            && archivedUrl.pathname.match(/^\/game\/(?:live|daily)\/(\d+)\/?$/i)?.[1] === gameId
+        } catch {
+          return false
+        }
+      })
+      if (game?.pgn && game.rules === 'chess') {
+        const side = game.white.username?.toLowerCase() === user.trim().toLowerCase() ? 'white' : game.black.username?.toLowerCase() === user.trim().toLowerCase() ? 'black' : undefined
+        return { pgn: game.pgn, side }
+      }
+    }
+    throw new Error('Could not find this game in the player’s recent Chess.com archives. Make sure the username is correct, or paste the game PGN.')
+  }
+  throw new Error('Only Chess.com and Lichess game URLs are supported.')
+}

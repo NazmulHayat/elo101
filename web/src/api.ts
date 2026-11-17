@@ -1,7 +1,7 @@
 // Everything runs in the browser: Stockfish (WebAssembly workers), the EP models and the review logic, so the
 // app is a static site. Same function names as the old server client, so the UI didn't change.
 import { createEnginePool, type EnginePool } from './engine/pool'
-import { fetchGamesDirect } from './importers'
+import { fetchGamesDirect, gameFromUrl } from './importers'
 import { loadBook, type Book } from './review/book'
 import { fetchTreeModel } from './review/lgbm'
 import type { RatingMeta } from './review/rating'
@@ -55,6 +55,10 @@ export async function health(): Promise<{ depth: number; workers: number; explai
 
 export function fetchGames(site: 'chesscom' | 'lichess', user: string): Promise<GameListItem[]> {
   return fetchGamesDirect(site, user)
+}
+
+export function fetchGameUrl(url: string, user?: string): Promise<{ pgn: string; side?: 'white' | 'black' }> {
+  return gameFromUrl(url, user)
 }
 
 /** Review a game in this browser; progress counts analysed positions. */

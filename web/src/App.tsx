@@ -1,6 +1,6 @@
 import { Chess } from 'chess.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { explainMove, GoneError, health, retryMove, streamReview } from './api'
+import { explainMove, fetchGameUrl, GoneError, health, retryMove, streamReview } from './api'
 import { moveCoach, retryCoach, startCoach, summaryCoach } from './coach'
 import { BoardArea, type BoardInput, type PlayerInfo } from './components/BoardArea'
 import { Coach } from './components/Coach'
@@ -89,6 +89,7 @@ export default function App() {
   const [explainOn, setExplainOn] = useState(false)
   const [notes, setNotes] = useState<Record<number, { text?: string; loading?: boolean; error?: string }>>({})
   const [lastPgn, setLastPgn] = useState<{ pgn: string; side?: Side } | null>(null)
+  const [handoffLink, setHandoffLink] = useState<{ url: string; user: string } | null>(null)
   const abort = useRef<AbortController | null>(null)
   const prevPly = useRef(0)
 
@@ -138,6 +139,28 @@ export default function App() {
       setStage('import')
     }
   }, [])
+
+  const handledHandoff = useRef(false)
+  useEffect(() => {
+    if (handledHandoff.current) return
+    const params = new URLSearchParams(window.location.search)
+    const gameUrl = params.get('game')
+    if (!gameUrl) return
+    handledHandoff.current = true
+    const gameUser = params.get('user') ?? ''
+    setHandoffLink({ url: gameUrl, user: gameUser })
+    params.delete('game')
+    params.delete('user')
+    const query = params.toString()
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`)
+    setStage('analyzing')
+    fetchGameUrl(gameUrl, gameUser || undefined)
+      .then(({ pgn, side }) => analyze(pgn, side))
+      .catch((e) => {
+        setError(e instanceof Error ? e.message : String(e))
+        setStage('import')
+      })
+  }, [analyze])
 
   const go = useCallback((p: number) => {
     setShowBest(false)
@@ -384,7 +407,7 @@ export default function App() {
                   )}
                 </div>
               )}
-              <ImportPanel onAnalyze={analyze} />
+              <ImportPanel onAnalyze={analyze} handoff={handoffLink ?? undefined} />
             </>
           )}
 
