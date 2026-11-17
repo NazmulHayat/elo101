@@ -350,6 +350,7 @@ export default function App() {
           <span>elo101</span>
         </div>
         <div className="topbar-actions">
+          <a className="btn btn-ghost btn-sm" href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
           {review && (
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setStage('import'); setPlaying(false); setRetry(null) }}>
               New game
