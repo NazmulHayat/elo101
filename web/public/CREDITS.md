@@ -1,5 +1,10 @@
 # UI assets
 
+- **Ice marble board** (`boards/ice.jpg`) — derived from Lichess's `public/images/board/blue-marble.jpg`
+  (https://github.com/lichess-org/lila), recoloured. AGPLv3 or later.
+- **Fonts** — Figtree, Geist and Noto Sans Symbols 2, SIL Open Font License 1.1, loaded through Google Fonts;
+  no font binary is redistributed.
+
 - **Inter** — Copyright © 2016 The Inter Project Authors, SIL Open Font License 1.1.
   Source: https://github.com/rsms/inter; license: https://github.com/rsms/inter/blob/master/LICENSE.txt.
   Loaded through Google Fonts with `display=swap`; system fonts are used if offline or blocked.

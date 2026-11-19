@@ -136,3 +136,12 @@ What was built, the numbers behind it, and the problems solved along the way. Ne
 - Move counts sit in pills sized by count and tinted with the label colour (white grows from the left, black from the right); zeros show "–"; a stronger rule separates good moves from errors; "Show all / Hide empty" is a quiet text link in the heading and only appears when some labels are empty.
 - Phase grades show the phase accuracy next to the grade icon instead of hiding it behind a tap.
 - Key moments align with the panel gutter, show who played the move, and draw a small chances track: kept chances in ink, the part the move gave away in its label colour.
+
+## Visual redesign: "Classic, made ours" (2026-11-19)
+
+- **Process:** several rounds of interactive HTML mocks reviewed by the user, then an approved final mock and build plan; built on `redesign/classic`.
+- **Look:** warm-neutral dark (default) and light themes, ice-blue `#3b8cff` for every action, flat buttons, Figtree + Geist, an Ice marble board (derived from Lichess blue-marble, AGPLv3+) with coordinates inside the corner squares. Move labels keep their meaning and order but use elo101's own colours and squircle badges.
+- **Panel:** split into a Summary page (graph, a players / accuracy / game rating / label-count grid, Start review) and a Review page (coach with eval chip, Retry this move / Show best, Chess.com-style move list with figurines, Chances | Engine graph tabs that also drive the eval bar, five equal controls). The old global Chances/Engine switch is gone.
+- **Graph:** now drawn in real pixels (ResizeObserver) so marker dots stay round at any width; notable moves get a stem to the mid line; hover shows a value pill and a dashed cursor.
+- **Settings:** the retired Club board migrates to Ice marble; `parseSettings` is unit-tested.
+- **Test hooks:** stable `data-testid`s on the pages, graph, tabs, move cells (with `data-ply`), controls, retry/show best, coach, eval bar, settings, help and sample game.

@@ -194,4 +194,4 @@ docs/               methodology, benchmark, engineering log
 
 ## License
 
-[MIT](LICENSE). Data: [Lichess open database](https://database.lichess.org/) (CC0). Engine: [Stockfish](https://stockfishchess.org/) (GPLv3, run as a separate program). Sounds: Lichess "standard" set (not MIT; see [web/public/sounds](web/public/sounds/README.md)). Not affiliated with Chess.com or Lichess.
+[MIT](LICENSE). Data: [Lichess open database](https://database.lichess.org/) (CC0). Engine: [Stockfish](https://stockfishchess.org/) (GPLv3, run as a separate program). Sounds: Lichess "standard" set (not MIT; see [web/public/sounds](web/public/sounds/README.md)). Board: the Ice marble texture (`web/public/boards/ice.jpg`) is derived from Lichess's `blue-marble.jpg`, recoloured (AGPLv3+, [lichess-org/lila](https://github.com/lichess-org/lila)). Fonts: Geist and Noto Sans Symbols 2 (SIL Open Font License), loaded from Google Fonts. Not affiliated with Chess.com or Lichess.

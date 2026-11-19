@@ -26,18 +26,19 @@ Moves are judged by **board-focused expected points at the players' rating**, wh
 - Analysis: Stockfish WASM runs locally; takes about a minute with a progress readout.
 - Summary: result, coach line, eval/chances graph, accuracy per player, game rating, label counts.
 - Review: board with eval bar, player bars with clocks and captured pieces, coach bubble per move, graph with label markers, move list, nav controls, Retry, a playable explanation line and variation, Next mistake, Show best.
-- Keyboard: ← → Home End, Space play, F flip. Settings: board theme, sounds, light/dark.
+- Keyboard: ← → Home End, Space play, F flip. Settings: board theme (Ice marble default), sounds, light/dark.
 
 ## Capabilities and Constraints
 
 - React 19 + Vite + react-chessboard; plain CSS in `web/src/index.css` (no Tailwind). Hosted on Vercel.
 - No account; analysis runs locally. Importing public game links contacts Chess.com or Lichess from the browser.
-- Must stay familiar to Chess.com users: the move-label colours and icons (Brilliant teal !!, Great blue !, Best green ★, … Blunder red ??) and the board-left / panel-right review layout.
+- Must stay familiar to Chess.com users: the move-label meaning and order (Brilliant !!, Great !, Best ★, … Blunder ??) and the board-left / panel-right review layout.
 
 ## Brand Commitments
 
-- Name: elo101. Knight favicon at `web/public/favicon.svg`.
-- Move-label colour/icon conventions above are binding.
+- Name: elo101. Knight on an ice-blue tile, `web/public/favicon.svg`.
+- Brand colour: ice blue `#3b8cff`, used for actions.
+- Move labels use elo101's own palette and squircle icons (see `DESIGN.md`); their meaning, glyphs and order stay familiar to Chess.com users and are binding.
 
 ## Evidence on Hand
 
