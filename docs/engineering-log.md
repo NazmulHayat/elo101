@@ -112,7 +112,7 @@ What was built, the numbers behind it, and the problems solved along the way. Ne
 - **Foundation:** design tokens (surfaces, text, status colors, spacing, radii, shadows, motion), consistent button and focus states, Inter with a system fallback, reduced-motion support.
 - **Import:** welcome screen, a bundled 13-ply sample game, the last five reviewed games in browser storage, progress with move count and ETA.
 - **Review:** board sized around the player bars, taller advantage graph with tooltip and keyboard selection, compact coach, summary with accuracy columns.
-- **Sound:** synthesised wood-tap and chime sounds for nine events, silent when stepping backward, saved volume. (2026-11-19: replaced by the Lichess "sfx" set, AGPLv3+.)
+- **Sound:** synthesised wood-tap and chime sounds for nine events, silent when stepping backward, saved volume. (2026-11-19: replaced by the Lichess "standard" set.)
 - **Help:** label and metric popovers, `?` for keyboard shortcuts, a dismissible first-review tour.
 - **Phone and themes:** width-constrained phone layout, swipe navigation, System / Light / Dark themes that follow the OS live.
 
