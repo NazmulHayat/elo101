@@ -63,7 +63,7 @@ Baseline 4 is the important comparison: the gap between it and the EP model is t
 The app uses two EP models, trained the same way on the same data:
 
 - **Chances model** (`models_finetuned`, all features including clocks): who is likely to win from here. Drives the eval bar and graph.
-- **Move-judging model** (`models_board`, `--board-only`): no clock or time-control features, trained on rapid and classical games only, with the eval constrained to be monotone (a better eval never lowers the chances). Drives every label, accuracy input and retry verdict.
+- **Move-judging model** (`models_board`, `--board-only`): no clock or time-control features, trained on rapid and classical games only, with the eval constrained to be monotone (a better eval never lowers the chances). Drives move labels and retry verdicts. Accuracy is calculated separately from engine evaluations using a Lichess-style formula.
 
 Why two: a user's 1+0 bullet game ([lichess.org/nMuWq0F1](https://lichess.org/nMuWq0F1)) showed 0 blunders and 94% accuracy where Lichess found 2 blunders and 81%. The clock-aware model was right about outcomes: in Lichess 1+0 games with ~24 s each, being 1.5–4 pawns up scores only 51%, because the clock decides. But that made giving away a queen for a rook cost 2.5% and earn "good". A move should be judged on the board. Training on rapid / classical games only, where results follow the board, made the curve steeper; picked by the benchmark below (all 64 known cases pass, error counts match Lichess's within 2%).
 
@@ -75,7 +75,7 @@ For each move the review computes:
 - **EP after**: the mover's EP after the move actually played.
 - **EP loss** = max(0, EP if best − EP after).
 
-Both numbers are scored on an *opponent-to-move* row with identical context (same ply, clocks, ratings), differing only in the engine eval. The model has a small side-to-move bias; comparing like with like cancels it. An earlier version compared "before the move" with "after the move" directly, and that bias showed up as a fake ~20% loss on every move.
+Both numbers are scored on an *opponent-to-move* row with identical context (same ply and ratings; the board model ignores clocks), differing only in the engine eval. The model has a small side-to-move bias; comparing like with like cancels it. An earlier version compared "before the move" with "after the move" directly, and that bias showed up as a fake ~20% loss on every move.
 
 Labels then use Chess.com's published bands: best (engine move), excellent < 0.02, good < 0.05, inaccuracy < 0.10, mistake < 0.20, blunder ≥ 0.20. Book moves come from a polyglot opening book. The same bands applied to the Lichess win% curve give the "eval-only" label the coach compares against.
 
@@ -189,7 +189,7 @@ The 25 unflagged blunders were all played in positions already lost (EP ≤ 12%)
 | Lichess blunders we flag as any error | 87.5% | 95.8% |
 | Moves Lichess leaves unmarked that we call mistake or worse | 1.1% | 0.2% |
 
-Our engine pass agrees with Lichess's stronger analysis (eval-only labels: 100% of our blunders are Lichess errors). The EP labels are deliberately gentler: Lichess's blunder cut-off is a 15-point win% drop while Chess.com's bands use 20, and EP discounts moves that don't change a decided game at that rating and clock.
+Our engine pass agrees with Lichess's stronger analysis (eval-only labels: 100% of our blunders are Lichess errors). The EP labels are deliberately gentler: Lichess's blunder cut-off is a 15-point win% drop while Chess.com's bands use 20, and EP discounts moves that don't change a decided game at that rating. The separate Chances graph can also reflect the clock.
 
 **Repeatability.** The same game reviewed twice kept the same label on only 78.2% of moves (20 games). Cause: each Stockfish process kept its hash and history from whatever it analysed before, so results depended on scheduling. Fixed by clearing the engine (`ucinewgame`) before every position: 100% identical labels on a re-review, for about 5% more time (same 8 games, 4 engines: 22.3 → 23.6 s per game; clearing once per block of 8 positions measured the same, 23.4 s).
 

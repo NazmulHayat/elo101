@@ -101,17 +101,18 @@ export function retryCoach(move: ReviewMove, retry: RetryState): CoachText {
       const exact = r.uci === move.best_uci
       return {
         title: `${r.san} is correct!`,
-        body: exact ? 'That’s the best move.' : `That works just as well as ${move.best_san}.`,
+        body: exact ? 'That’s the strongest move Stockfish found. Move a piece to continue your line, or Show why to watch the engine line.' : `That is close to ${move.best_san} in expected score. Move a piece to continue your line, or Show why to watch the engine line.`,
         line: exact ? formatLine(move.best_line_san, move.ply) : undefined,
       }
     }
     case 'wrong':
     case 'solution': {
-      const tried = r ? `${r.san} isn’t the best move here.` : ''
-      if (retry.phase === 'wrong') return { title: 'Not quite', body: `${tried} Try another move.` }
+      const loss = r && Number.isFinite(r.ep_loss) ? ` It gives away about ${Math.round(r.ep_loss * 100)} expected-score points compared with the best move.` : ''
+      const tried = r ? `${r.san} is not close enough to the strongest move.${loss}` : ''
+      if (retry.phase === 'wrong') return { title: 'Try another move', body: `${tried} The board is ready—move a piece to try again, or show why to play out the reply.` }
       return {
-        title: `The move was ${move.best_san}`,
-        body: tried,
+        title: `Best move: ${move.best_san}`,
+        body: `${tried} You can review the answer or explore what your move allows.`,
         line: formatLine(move.best_line_san, move.ply),
       }
     }

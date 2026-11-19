@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { loadBook } from './book'
 import { loadTreeModel, type TreeModelJson } from './lgbm'
 import type { RatingMeta } from './rating'
-import { reviewGame, type Models } from './review'
+import { reviewGame, scoreAttempt, type Models } from './review'
 import type { EngineFields } from './types'
 
 const fs = (await import(/* @vite-ignore */ 'node:fs' as string)) as {
@@ -80,4 +80,15 @@ describe('review matches Python', () => {
       expect(r.key_moments).toEqual(want.key_moments)
     }, 120_000)
   }
+})
+
+it('provides a legal continuation when a player retries with the best move', async () => {
+  const fx = fixtures.find((f) => f.expected.moves.some((m) => m.ep_label === 'blunder' && m.best_uci))!
+  const analyse = async (fens: string[]) => fens.map((f) => fx.engine[f])
+  const review = await reviewGame(fx.pgn, models, analyse, { depth: 17, useBook: fx.use_book })
+  const mistake = review.moves.find((m) => m.ep_label === 'blunder' && m.best_uci)!
+  const attempt = await scoreAttempt(review, mistake, mistake.best_uci!, models.board, analyse)
+  expect(attempt.correct).toBe(true)
+  expect(attempt.continuation?.[0]?.fen).toBeTruthy()
+  expect(attempt.reply_san).toBe(attempt.continuation?.[0]?.san)
 })

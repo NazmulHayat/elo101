@@ -95,6 +95,10 @@ typography:
     fontSize: "13px"
     fontWeight: 800
     lineHeight: 1
+  captured-piece:
+    fontFamily: "Segoe UI Symbol, Apple Symbols, DejaVu Sans, sans-serif"
+    fontSize: "17px"
+    lineHeight: 1
   body:
     fontFamily: "Figtree, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
     fontSize: "15px"
@@ -306,6 +310,7 @@ A two-material palette (green vinyl and buff paper) with two narrow accents and 
 
 **Display Font:** Bricolage Grotesque (opsz 12–96, weights 500–800), falling back to Figtree, system-ui
 **Body Font:** Figtree (weights 400–800), falling back to -apple-system, BlinkMacSystemFont, Segoe UI
+**Captured-piece symbols:** Segoe UI Symbol, Apple Symbols, DejaVu Sans, then sans-serif. This stack is reserved for Unicode chess pieces in player bars so their glyphs render across platforms; it is not used for interface text.
 
 **Character:** Bricolage is the printed matter of the club: the headline, the coordinates on the mat, the clocks and the big accuracy numbers, set heavy and tight. Figtree is the handwriting on the scoresheet: friendly, legible, bold where it is a control.
 

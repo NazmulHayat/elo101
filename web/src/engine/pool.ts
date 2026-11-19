@@ -49,6 +49,7 @@ export function createEnginePool(opts: EnginePoolOptions): EnginePool {
   const queue: Job[] = []
   const idle: Slot[] = []
   const slots: Slot[] = []
+  const active = new Map<Slot, Job>()
   let closed = false
 
   function spawn(): Slot {
@@ -85,6 +86,7 @@ export function createEnginePool(opts: EnginePoolOptions): EnginePool {
   }
 
   async function run(slot: Slot, job: Job): Promise<void> {
+    active.set(slot, job)
     try {
       await slot.ready
       const result = await new Promise<EngineFields>((resolve, reject) => {
@@ -93,8 +95,11 @@ export function createEnginePool(opts: EnginePoolOptions): EnginePool {
       })
       slot.onError = null
       job.resolve(result)
+      active.delete(slot)
       idle.push(slot)
     } catch (e) {
+      active.delete(slot)
+      if (closed) return
       slot.onError = null
       // A crashed worker gets one restart; the position gets one retry.
       const next = !slot.restarted ? replace(slot) : null
@@ -164,6 +169,8 @@ export function createEnginePool(opts: EnginePoolOptions): EnginePool {
     close() {
       closed = true
       for (const s of slots) s.worker.terminate()
+      for (const j of active.values()) j.reject(new Error('Analysis canceled'))
+      active.clear()
       for (const j of queue.splice(0)) j.reject(new Error('engine pool closed'))
     },
   }

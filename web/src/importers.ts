@@ -186,12 +186,13 @@ export async function gameFromUrl(rawUrl: string, user?: string, f: Fetch = fetc
     const path = url.pathname.match(/^\/([a-zA-Z0-9]{8,12})\/?$/)
     const id = path?.[1]
     if (!id || !/^[a-zA-Z0-9]{8,12}$/.test(id)) throw new Error('That doesn’t look like a Lichess game URL.')
-    const response = await get(f, `https://lichess.org/game/export/${encodeURIComponent(id)}?clocks=false&evals=false`, 'Lichess', {
+    const response = await get(f, `https://lichess.org/game/export/${encodeURIComponent(id)}?clocks=true&evals=false`, 'Lichess', {
       headers: { Accept: 'application/x-chess-pgn' },
     })
     if (!response.ok) throw failure('Lichess', id, response.status)
     const pgn = await response.text()
     if (!pgn.trim() || !pgn.includes('\n')) throw new Error('Lichess did not return a completed game PGN.')
+    if (pgnResult(pgn) === '*') throw new Error('This game is still in progress. Finish it before reviewing, or paste a completed PGN.')
     return { pgn }
   }
 

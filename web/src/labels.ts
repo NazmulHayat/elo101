@@ -4,21 +4,20 @@ export interface LabelMeta {
   name: string
   article: string // "a" / "an" / "the"
   color: string
-  glyph: string
 }
 
 // Order matches the summary table, best to worst.
 export const LABELS: Record<Label, LabelMeta> = {
-  brilliant: { name: 'Brilliant', article: 'a', color: 'var(--c-brilliant)', glyph: '!!' },
-  great: { name: 'Great', article: 'a', color: 'var(--c-great)', glyph: '!' },
-  best: { name: 'Best', article: 'the', color: 'var(--c-best)', glyph: '★' },
-  excellent: { name: 'Excellent', article: 'an', color: 'var(--c-excellent)', glyph: '+' },
-  good: { name: 'Good', article: 'a', color: 'var(--c-good)', glyph: '✓' },
-  book: { name: 'Book', article: 'a', color: 'var(--c-book)', glyph: 'B' },
-  inaccuracy: { name: 'Inaccuracy', article: 'an', color: 'var(--c-inaccuracy)', glyph: '?!' },
-  mistake: { name: 'Mistake', article: 'a', color: 'var(--c-mistake)', glyph: '?' },
-  miss: { name: 'Miss', article: 'a', color: 'var(--c-miss)', glyph: '✕' },
-  blunder: { name: 'Blunder', article: 'a', color: 'var(--c-blunder)', glyph: '??' },
+  brilliant: { name: 'Brilliant', article: 'a', color: 'var(--c-brilliant)' },
+  great: { name: 'Great', article: 'a', color: 'var(--c-great)' },
+  best: { name: 'Best', article: 'the', color: 'var(--c-best)' },
+  excellent: { name: 'Excellent', article: 'an', color: 'var(--c-excellent)' },
+  good: { name: 'Good', article: 'a', color: 'var(--c-good)' },
+  book: { name: 'Book', article: 'a', color: 'var(--c-book)' },
+  inaccuracy: { name: 'Inaccuracy', article: 'an', color: 'var(--c-inaccuracy)' },
+  mistake: { name: 'Mistake', article: 'a', color: 'var(--c-mistake)' },
+  miss: { name: 'Miss', article: 'a', color: 'var(--c-miss)' },
+  blunder: { name: 'Blunder', article: 'a', color: 'var(--c-blunder)' },
 }
 
 export const LABEL_ORDER: Label[] = ['brilliant', 'great', 'best', 'excellent', 'good', 'book', 'inaccuracy', 'mistake', 'miss', 'blunder']

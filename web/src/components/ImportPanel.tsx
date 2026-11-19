@@ -28,6 +28,7 @@ function remember(key: string, value: string) {
 export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, you?: 'white' | 'black') => void; handoff?: { url: string; user: string } }) {
   const [tab, setTab] = useState<Tab>(() => {
     if (handoff) return 'link'
+    if (new URLSearchParams(window.location.search).get('import') === 'pgn') return 'pgn'
     const saved = remembered('cc.tab')
     return saved === 'lichess' || saved === 'link' || saved === 'pgn' ? saved : 'chesscom'
   })
@@ -76,15 +77,18 @@ export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, y
   async function importLink(e: React.FormEvent) {
     e.preventDefault()
     if (!gameUrl.trim()) return
+    const id = ++request.current
     setLoading(true)
     setError(null)
     try {
       const game = await fetchGameUrl(gameUrl.trim(), gameUser.trim() || undefined)
+      if (id !== request.current) return
       onAnalyze(game.pgn, game.side)
     } catch (err) {
+      if (id !== request.current) return
       setError(err instanceof Error ? err.message : String(err))
     } finally {
-      setLoading(false)
+      if (id === request.current) setLoading(false)
     }
   }
 
@@ -105,7 +109,7 @@ export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, y
           <button type="submit" className="btn btn-primary btn-block" disabled={!gameUrl.trim() || loading}>
             {loading ? 'Loading…' : 'Analyze game'}
           </button>
-          {error && <div className="error" role="alert">{error}</div>}
+          {error && <div className="error" role="alert">{error} <button type="button" className="link-btn" onClick={() => switchTab('pgn')}>Paste PGN instead</button></div>}
         </form>
       ) : tab === 'pgn' ? (
         <form

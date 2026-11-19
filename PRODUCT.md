@@ -18,20 +18,20 @@ elo101 is a free chess game review that runs entirely in the browser. It labels 
 
 ## Positioning
 
-Moves are judged by **expected points at the players' rating and time control** (a model trained on millions of Lichess games), not by raw engine score alone. "+1.5 for two 800s is not +1.5 for two 2200s." The "Chances" view exposes this; the "Engine" view shows raw Stockfish.
+Moves are judged by **board-focused expected points at the players' rating**, while the separate "Chances" view uses available clocks and time control to estimate expected score. The "Engine" view shows raw Stockfish.
 
 ## Operating Context
 
 - Import: Chess.com username, Lichess username, or pasted PGN; or a built-in sample (Morphy's Opera Game).
 - Analysis: Stockfish WASM runs locally; takes about a minute with a progress readout.
 - Summary: result, coach line, eval/chances graph, accuracy per player, game rating, label counts.
-- Review: board with eval bar, player bars with clocks and captured pieces, coach bubble per move, graph with label markers, move list, nav controls, Retry, Next mistake, Show best, optional Claude "Explain".
+- Review: board with eval bar, player bars with clocks and captured pieces, coach bubble per move, graph with label markers, move list, nav controls, Retry, a playable explanation line and variation, Next mistake, Show best.
 - Keyboard: ← → Home End, Space play, F flip. Settings: board theme, sounds, light/dark.
 
 ## Capabilities and Constraints
 
 - React 19 + Vite + react-chessboard; plain CSS in `web/src/index.css` (no Tailwind). Hosted on Vercel.
-- No account, nothing uploaded.
+- No account; analysis runs locally. Importing public game links contacts Chess.com or Lichess from the browser.
 - Must stay familiar to Chess.com users: the move-label colours and icons (Brilliant teal !!, Great blue !, Best green ★, … Blunder red ??) and the board-left / panel-right review layout.
 
 ## Brand Commitments

@@ -497,10 +497,14 @@ export async function scoreAttempt(
   const terminal = terminalScore(board)
   const row: PositionRow = { ...review.rows[i + 1], terminal }
   let ep: number
+  let lineUci: string[] = []
+  let replyMate: number | null = null
   if (uci === move.best_uci) ep = move.ep_best
   else if (terminal !== null) ep = 1 - terminal
   else {
     const [ev] = await analyse([board.fen()])
+    lineUci = ev.pv_uci
+    replyMate = ev.mate_stm
     Object.assign(row, {
       eval_cp_white: ev.eval_cp_white,
       mate_white: ev.mate_white,
@@ -510,6 +514,19 @@ export async function scoreAttempt(
     })
     ep = 1 - model.predictRows([row])[0]
   }
+  if (uci === move.best_uci) lineUci = review.rows[i].pv_uci.slice(1)
+  const continuation: { uci: string; san: string; fen: string }[] = []
+  const response = new Chess(board.fen())
+  for (const nextUci of lineUci.slice(0, 4)) {
+    try {
+      const next = response.move({ from: nextUci.slice(0, 2), to: nextUci.slice(2, 4), promotion: nextUci[4] })
+      continuation.push({ uci: nextUci, san: next.san, fen: response.fen() })
+    } catch { break }
+  }
+  const replyUci = continuation[0]?.uci ?? null
+  const replySan = continuation[0]?.san ?? null
+  const replyFen = continuation[0]?.fen ?? null
+  const reason = uci === move.best_uci ? null : tacticHint(move.fen_before, uci, move.best_uci, review.rows[i].mate_stm, replyMate)
   const loss = Math.max(0, move.ep_best - ep)
   const isBest = uci === move.best_uci
   return {
@@ -521,5 +538,10 @@ export async function scoreAttempt(
     correct: isBest || loss <= RETRY_TOLERANCE,
     best_san: move.best_san,
     best_line_san: move.best_line_san,
+    reason,
+    reply_uci: replyUci,
+    reply_san: replySan,
+    reply_fen: replyFen,
+    continuation,
   } as RetryResult
 }
