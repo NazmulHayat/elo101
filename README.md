@@ -194,4 +194,4 @@ docs/               methodology, benchmark, engineering log
 
 ## License
 
-[MIT](LICENSE). Data: [Lichess open database](https://database.lichess.org/) (CC0). Engine: [Stockfish](https://stockfishchess.org/) (GPLv3, run as a separate program). Not affiliated with Chess.com or Lichess.
+[MIT](LICENSE). Data: [Lichess open database](https://database.lichess.org/) (CC0). Engine: [Stockfish](https://stockfishchess.org/) (GPLv3, run as a separate program). Sounds: Lichess "sfx" set by [Enigmahack](https://github.com/Enigmahack) (AGPLv3+, see [web/public/sounds](web/public/sounds/README.md)). Not affiliated with Chess.com or Lichess.
