@@ -1,29 +1,41 @@
+import type { ReactNode } from 'react'
 import { LABELS } from '../labels'
 import type { Label } from '../types'
-import type { ReactNode } from 'react'
 
-function Symbol({ label }: { label: Label }) {
-  const shared = { fill: 'none', stroke: 'currentColor', strokeWidth: 2.25, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
-  const shapes: Record<Label, ReactNode> = {
-    brilliant: <><path d="M7 3h10l4 6-9 12L3 9l4-6Z" /><path d="M3 9h18M8 3l4 18 4-18" /></>,
-    great: <><path d="m12 2 2.5 6.5L21 11l-6.5 2.5L12 20l-2.5-6.5L3 11l6.5-2.5L12 2Z" /><path d="M19 19h2m-1-1v2" /></>,
-    best: <path d="m12 2.5 2.9 6 6.6 1-4.8 4.7 1.1 6.6-5.8-3.1-5.8 3.1 1.1-6.6-4.8-4.7 6.6-1L12 2.5Z" />,
-    excellent: <><path d="M7 10v11H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3Z" /><path d="M7 10 12 3a2 2 0 0 1 3.5 1.7L14 10h5a2 2 0 0 1 2 2l-1 7a2 2 0 0 1-2 2H7" /></>,
-    good: <path d="m4 12 5 5L20 6" />,
-    book: <><path d="M12 6c-3-2-6-2-10-1v14c4-1 7-1 10 1 3-2 6-2 10-1V5c-4-1-7-1-10 1Z" /><path d="M12 6v14" /></>,
-    inaccuracy: <><path d="m12 3 10 18H2L12 3Z" /><path d="M12 9v5m0 3h.01" /></>,
-    mistake: <><path d="M4 5h7l-3 5 5 3-3 6h10" /><path d="m16 16 4 3-4 3" /></>,
-    miss: <><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4" /><path d="m4 20 16-16" /></>,
-    blunder: <><path d="M7 2h10l5 5v10l-5 5H7l-5-5V7l5-5Z" /><path d="m8 8 8 8m0-8-8 8" /></>,
-  }
-  return <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" {...shared}>{shapes[label]}</svg>
+// elo101's squircle badge: the label colour with a white glyph (!!, !, star, thumbs-up, check, book, ?!, ?, ✕, ??).
+const SQUIRCLE = 'M10 .8c6.6 0 9.2 2.6 9.2 9.2s-2.6 9.2-9.2 9.2S.8 16.6.8 10 3.4.8 10 .8z'
+
+const Bang = ({ x }: { x: number }) => (
+  <><rect x={x - 1.4} y={4.3} width={2.8} height={7.6} rx={1.4} fill="#fff" /><circle cx={x} cy={14.9} r={1.6} fill="#fff" /></>
+)
+
+const Query = ({ x }: { x: number }) => (
+  <>
+    <path d={`M${x - 2.6} 7.4a2.6 2.6 0 1 1 3.9 2.25c-.85.5-1.3 1-1.3 2.05`} fill="none" stroke="#fff" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx={x} cy={14.9} r={1.6} fill="#fff" />
+  </>
+)
+
+const GLYPHS: Record<Label, ReactNode> = {
+  brilliant: <><Bang x={7.1} /><Bang x={12.9} /></>,
+  great: <Bang x={10} />,
+  best: <path d="M10 3.7l1.95 4.1 4.45.55-3.3 3.05.85 4.4L10 13.65 6.05 15.8l.85-4.4-3.3-3.05 4.45-.55z" fill="#fff" stroke="#fff" strokeWidth={1} strokeLinejoin="round" />,
+  excellent: <><path d="M5.2 9.3h2.3v6.6H5.2z" fill="#fff" /><path d="M8.6 15.9V9.5l2.5-4.3c.5-.85 1.85-.45 1.75.55l-.3 2.75h2.6c.85 0 1.5.8 1.3 1.65l-1 4.35c-.15.8-.85 1.4-1.65 1.4z" fill="#fff" /></>,
+  good: <path d="M5.6 10.4l3 3 5.8-6.5" fill="none" stroke="#fff" strokeWidth={2.7} strokeLinecap="round" strokeLinejoin="round" />,
+  book: <><path d="M10 6.5C8.3 5.3 6.4 5 4.3 5.3v8.9c2.1-.3 4 .05 5.7 1.25 1.7-1.2 3.6-1.55 5.7-1.25V5.3c-2.1-.3-4 0-5.7 1.2z" fill="#fff" /><path d="M10 6.6v8.6" stroke="rgba(0,0,0,.22)" strokeWidth={1} /></>,
+  inaccuracy: <><Query x={7.3} /><Bang x={13.6} /></>,
+  mistake: <Query x={10} />,
+  miss: <path d="M6.4 6.4l7.2 7.2M13.6 6.4l-7.2 7.2" stroke="#fff" strokeWidth={2.8} strokeLinecap="round" />,
+  blunder: <><Query x={6.9} /><Query x={13.1} /></>,
 }
 
 export function LabelIcon({ label, size = 16 }: { label: Label; size?: number }) {
   const m = LABELS[label]
   return (
-    <span className="label-icon" style={{ background: m.color, width: size, height: size }} title={m.name} aria-label={m.name} role="img">
-      <Symbol label={label} />
-    </span>
+    <svg className="label-icon" width={size} height={size} viewBox="0 0 20 20" role="img" aria-label={m.name} focusable="false">
+      <title>{m.name}</title>
+      <path d={SQUIRCLE} fill={m.color} />
+      {GLYPHS[label]}
+    </svg>
   )
 }
