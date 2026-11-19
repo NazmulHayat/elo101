@@ -110,35 +110,6 @@ export function Summary({ review, coach, graphValues, mode, onStart, onJump, onP
           </div>
         </section>
 
-        {keyMoves.length > 0 && (
-          <section className="sum-section key-moments" aria-label="Key moments">
-            <h3 className="sum-h">Key moments</h3>
-            <p className="key-explain">These percentages compare each move with the strongest move using the move-label model. The graph uses the separate Chances model.</p>
-            {keyMoves.map((m) => (<div className="key-row" key={m.ply}>
-              <button
-                type="button"
-                className="key-item"
-                onClick={() => onJump(m.ply)}
-                aria-label={`${m.move_number}${m.mover === 'white' ? '.' : '...'} ${m.san}, ${LABELS[m.ep_label].name.toLowerCase()}: ${pct(m.ep_best)} to ${pct(m.ep_after)}`}
-              >
-                <LabelIcon label={m.ep_label} size={22} />
-                <span className="key-move">
-                  <span><span className="key-num">{m.move_number}{m.mover === 'white' ? '.' : '…'}</span> {m.san}</span>
-                  <small>{m.mover === 'white' ? white : black}</small>
-                </span>
-                <span className="key-drop">
-                  <span className="key-pct">{pct(m.ep_best)} → <strong>{pct(m.ep_after)}</strong></span>
-                  <span className="key-track" aria-hidden="true" style={{ '--lc': LABELS[m.ep_label].color, '--from': m.ep_best, '--to': m.ep_after } as CSSProperties}>
-                    <span />
-                  </span>
-                </span>
-                <svg className="key-chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </button>
-              {['mistake', 'miss', 'blunder'].includes(m.ep_label) && <button type="button" className="key-practice" onClick={() => onPractice(m.ply)}>Try this position before seeing the answer →</button>}
-            </div>))}
-          </section>
-        )}
-
         <section className="sum-section" aria-label="Phases">
           <h3 className="sum-h">Phases <InfoTip label="Phases">Each grade summarizes move accuracy during the opening, middlegame or endgame. The number is that phase’s accuracy; a dash means there were no moves to grade.</InfoTip></h3>
           <div className="phase-grid">
@@ -151,6 +122,37 @@ export function Summary({ review, coach, graphValues, mode, onStart, onJump, onP
             ))}
           </div>
         </section>
+
+        {keyMoves.length > 0 && (
+          <section className="sum-section key-moments" aria-label="Turning points">
+            <h3 className="sum-h">Turning points <InfoTip label="Turning points">The percentages compare each move with the strongest move using the move-label model; the graph uses the separate Chances model. Click a move to jump to it, or the retry button to try the position yourself first.</InfoTip></h3>
+            <div className="key-list">
+              {keyMoves.map((m) => (
+                <div className="key-row" key={m.ply}>
+                  <button
+                    type="button"
+                    className="key-item"
+                    onClick={() => onJump(m.ply)}
+                    aria-label={`${m.move_number}${m.mover === 'white' ? '.' : '...'} ${m.san} by ${m.mover === 'white' ? white : black}, ${LABELS[m.ep_label].name.toLowerCase()}: ${pct(m.ep_best)} to ${pct(m.ep_after)}`}
+                  >
+                    <LabelIcon label={m.ep_label} size={20} />
+                    <span className="key-move">
+                      <span className="key-num">{m.move_number}{m.mover === 'white' ? '.' : '…'}</span>
+                      <span style={{ color: LABELS[m.ep_label].color }}>{m.san}</span>
+                      <small>{m.mover === 'white' ? white : black}</small>
+                    </span>
+                    <span className="key-pct">{pct(m.ep_best)} → <strong>{pct(m.ep_after)}</strong></span>
+                  </button>
+                  {['mistake', 'miss', 'blunder'].includes(m.ep_label) && (
+                    <button type="button" className="key-practice" onClick={() => onPractice(m.ply)} aria-label={`Try ${m.move_number}${m.mover === 'white' ? '.' : '...'} ${m.san} yourself`} title="Try this position yourself">
+                      <svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2v3h3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <p className="fine-print">
           {(!ws.estimated_rating || !bs.estimated_rating) && 'Game rating needs at least 10 moves by each player; a dash means that player made too few moves. '}
