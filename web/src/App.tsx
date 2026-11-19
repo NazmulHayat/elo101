@@ -1,6 +1,6 @@
 import { Chess } from 'chess.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { explainMove, fetchGameUrl, GoneError, health, retryMove, streamReview } from './api'
+import { analyseVariation, explainMove, fetchGameUrl, GoneError, health, retryMove, streamReview } from './api'
 import { moveCoach, retryCoach, startCoach, summaryCoach } from './coach'
 import { BoardArea, type BoardInput, type PlayerInfo } from './components/BoardArea'
 import { Coach } from './components/Coach'
@@ -33,6 +33,19 @@ export interface RetryState {
   attempt?: { from: string; to: string }
   result?: RetryResult
   error?: string
+  attemptFen?: string
+  requestId?: number
+}
+
+interface VariationMove { san: string; uci: string; fen: string }
+interface Variation {
+  id: number
+  anchorPly: number
+  firstPly: number
+  anchorFen: string
+  moves: VariationMove[]
+  cursor: number
+  explanation: string
 }
 
 const RETRY_TOLERANCE = 0.02 // same as the server: within 2% of the best move counts as finding it
@@ -76,22 +89,35 @@ export default function App() {
   const [stage, setStage] = useState<Stage>('import')
   const [review, setReview] = useState<Review | null>(null)
   const [ply, setPly] = useState(0)
-  const [mode, setMode] = useState<Mode>('engine') // engine score by default, as Chess.com shows it
+  const [mode, setMode] = useState<Mode>('chances')
   const [orientation, setOrientation] = useState<Side>('white')
   const [playing, setPlaying] = useState(false)
   const [showBest, setShowBest] = useState(false)
   const [progress, setProgress] = useState({ done: 0, total: 0, elapsed: 0 })
   const [error, setError] = useState<string | null>(null)
   const [pending, setPending] = useState<Record<string, string>>({})
-  const [you, setYou] = useState<Side | null>(null)
+  const [playerSide, setPlayerSide] = useState<Side>('white')
   const [retry, setRetry] = useState<RetryState | null>(null)
+  const [practiceVisited, setPracticeVisited] = useState(false)
+  const [variations, setVariations] = useState<Variation[]>([])
+  const [activeVariationId, setActiveVariationId] = useState<number | null>(null)
+  const activeVariationIdRef = useRef<number | null>(null)
+  activeVariationIdRef.current = activeVariationId
+  const [variationEval, setVariationEval] = useState<{ fen: string; cp: number | null; mate: number | null } | null>(null)
+  const [replyHint, setReplyHint] = useState<{ fen: string; moves: VariationMove[] } | null>(null)
+  const attemptId = useRef(0)
+  const variationId = useRef(0)
+  const boardRef = useRef<HTMLElement>(null)
   const [settings, updateSettings] = useSettings()
   const [explainOn, setExplainOn] = useState(false)
   const [notes, setNotes] = useState<Record<number, { text?: string; loading?: boolean; error?: string }>>({})
   const [lastPgn, setLastPgn] = useState<{ pgn: string; side?: Side } | null>(null)
   const [handoffLink, setHandoffLink] = useState<{ url: string; user: string } | null>(null)
   const abort = useRef<AbortController | null>(null)
+  const handoffToken = useRef(0)
   const prevPly = useRef(0)
+  const prevStage = useRef<Stage>('import')
+  const prevVariation = useRef<{ id: number; cursor: number } | null>(null)
 
   useEffect(() => {
     health().then((h) => {
@@ -112,10 +138,13 @@ export default function App() {
     abort.current?.abort()
     setPlaying(false)
     prevPly.current = 0
-    setYou(side ?? null)
+    setPlayerSide(side ?? 'white')
     setOrientation(side ?? 'white')
     setLastPgn({ pgn, side })
     setRetry(null)
+    setPracticeVisited(false)
+    setVariations([])
+    setActiveVariationId(null)
     const ctrl = new AbortController()
     abort.current = ctrl
     setError(null)
@@ -154,9 +183,11 @@ export default function App() {
     const query = params.toString()
     window.history.replaceState(window.history.state, '', `${window.location.pathname}${query ? `?${query}` : ''}${window.location.hash}`)
     setStage('analyzing')
+    const token = ++handoffToken.current
     fetchGameUrl(gameUrl, gameUser || undefined)
-      .then(({ pgn, side }) => analyze(pgn, side))
+      .then(({ pgn, side }) => { if (token === handoffToken.current) analyze(pgn, side) })
       .catch((e) => {
+        if (token !== handoffToken.current) return
         setError(e instanceof Error ? e.message : String(e))
         setStage('import')
       })
@@ -165,6 +196,7 @@ export default function App() {
   const go = useCallback((p: number) => {
     setShowBest(false)
     setRetry(null)
+    setActiveVariationId(null)
     setPly((cur) => {
       const max = review ? review.moves.length : 0
       const next = Math.max(0, Math.min(max, p))
@@ -172,19 +204,110 @@ export default function App() {
     })
   }, [review])
 
+  const activeVariation = variations.find((v) => v.id === activeVariationId) ?? null
+  const variationFen = activeVariation ? (activeVariation.cursor === 0 ? activeVariation.anchorFen : activeVariation.moves[activeVariation.cursor - 1].fen) : null
+  const evaluationFen = variationFen ?? (retry && (retry.phase === 'checking' || retry.phase === 'correct') ? retry.fen : null)
+
+  useEffect(() => {
+    if (!evaluationFen) return
+    let live = true
+    setVariationEval(null)
+    analyseVariation(evaluationFen).then((ev) => {
+      if (live) setVariationEval({ fen: evaluationFen, cp: ev.eval_cp_white, mate: ev.mate_white })
+    }).catch(() => { if (live) setVariationEval(null) })
+    return () => { live = false }
+  }, [evaluationFen])
+
+  const variationStep = useCallback((cursor: number) => {
+    setVariations((list) => list.map((v) => v.id === activeVariationId ? { ...v, cursor: Math.max(0, Math.min(cursor, v.moves.length)) } : v))
+  }, [activeVariationId])
+
+  const onVariationMove = useCallback((from: string, to: string, promotion?: string): boolean => {
+    if (!activeVariation || !variationFen) return false
+    const board = new Chess(variationFen)
+    try {
+      const m = board.move({ from, to, promotion })
+      const next: VariationMove = { san: m.san, uci: from + to + (promotion ?? ''), fen: board.fen() }
+      setVariations((list) => list.map((v) => v.id === activeVariation.id
+        ? { ...v, moves: [...v.moves.slice(0, v.cursor), next], cursor: v.cursor + 1 } : v))
+      return true
+    } catch { return false }
+  }, [activeVariation, variationFen])
+
+  const openAttemptLine = useCallback(() => {
+    if (!retry?.attemptFen || !retry.result || !review) return
+    const m = review.moves[retry.ply - 1]
+    const first: VariationMove = { san: retry.result.san, uci: retry.result.uci, fen: retry.attemptFen }
+    const line = retry.result.continuation ?? []
+    const reply = line[0]
+    const id = ++variationId.current
+    const reason = retry.result.reason
+      ? `${retry.result.san} ${retry.result.reason}.`
+      : reply ? `After ${retry.result.san}, Stockfish’s strongest reply is ${reply.san}.` : `${retry.result.san} reaches this position.`
+    const explanation = retry.result.correct
+      ? `${retry.result.san} keeps your expected score close to the strongest move. ${reason}`
+      : `${retry.result.san} gives away about ${Math.round(retry.result.ep_loss * 100)} expected-score points compared with the strongest move. ${reason}`
+    const plannedMoves = [first, ...line]
+    setVariations((list) => [...list, { id, anchorPly: retry.ply, firstPly: retry.ply, anchorFen: m.fen_before, moves: plannedMoves, cursor: 1, explanation }])
+    setActiveVariationId(id)
+    for (let cursor = 2; cursor <= plannedMoves.length; cursor++) {
+      window.setTimeout(() => {
+        if (activeVariationIdRef.current !== id) return
+        setVariations((list) => list.map((v) => v.id === id && v.cursor === cursor - 1 && v.moves[cursor - 1]?.uci === plannedMoves[cursor - 1].uci
+          ? { ...v, cursor } : v))
+      }, (cursor - 1) * 900)
+    }
+    boardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [retry, review])
+
+  const continueAttempt = useCallback((from: string, to: string, promotion?: string): boolean => {
+    if (!retry?.result?.correct || !retry.attemptFen || !review) return false
+    const board = new Chess(retry.attemptFen)
+    try {
+      const next = board.move({ from, to, promotion })
+      const first: VariationMove = { san: retry.result.san, uci: retry.result.uci, fen: retry.attemptFen }
+      const id = ++variationId.current
+      setVariations((list) => [...list, {
+        id, anchorPly: retry.ply, firstPly: retry.ply, anchorFen: review.moves[retry.ply - 1].fen_before,
+        moves: [first, { san: next.san, uci: from + to + (promotion ?? ''), fen: board.fen() }], cursor: 2,
+        explanation: `${first.san} is close to the strongest move. You continued this position with ${next.san}.`,
+      }])
+      setActiveVariationId(id)
+      return true
+    } catch { return false }
+  }, [retry, review])
+
   const flip = useCallback(() => setOrientation((o) => (o === 'white' ? 'black' : 'white')), [])
 
-  // Forward navigation includes clicks and jumps; backward navigation stays quiet.
+  // Entering review plays the game-start cue. Forward moves play their own cue;
+  // backward navigation and the puzzle's pre-move position stay quiet.
   useEffect(() => {
     const prev = prevPly.current
     prevPly.current = ply
-    if (!review || !settings.sounds || stage !== 'review' || ply <= prev || ply === 0) return
-    play(soundForSan(review.moves[ply - 1].san), settings.volume)
+    const enteredReview = stage === 'review' && prevStage.current !== 'review'
+    prevStage.current = stage
+    if (!review || !settings.sounds || stage !== 'review') return
+    if (enteredReview) {
+      play('start', settings.volume)
+      return
+    }
+    if (retry || ply <= prev || ply === 0) return
+    const played = review.moves[ply - 1]
+    play(soundForSan(played.san, played.mover, playerSide), settings.volume)
     if (ply === review.moves.length) {
       const timer = setTimeout(() => play('end', settings.volume), 180)
       return () => clearTimeout(timer)
     }
-  }, [ply, review, settings.sounds, settings.volume, stage])
+  }, [ply, review, retry, settings.sounds, settings.volume, stage, playerSide])
+
+  useEffect(() => {
+    const previous = prevVariation.current
+    prevVariation.current = activeVariation ? { id: activeVariation.id, cursor: activeVariation.cursor } : null
+    if (!activeVariation || !settings.sounds || !previous || previous.id !== activeVariation.id || activeVariation.cursor <= previous.cursor) return
+    const played = activeVariation.moves[activeVariation.cursor - 1]
+    const mover: Side = played.fen.split(' ')[1] === 'w' ? 'black' : 'white'
+    play(soundForSan(played.san, mover, playerSide), settings.volume)
+  }, [activeVariation, settings.sounds, settings.volume, playerSide])
 
   // Keyboard: ← → Home End, Space play, F flip.
   useEffect(() => {
@@ -194,18 +317,18 @@ export default function App() {
       if (e.ctrlKey || e.metaKey || e.altKey || target.closest('input, textarea, select, [contenteditable="true"], [popover], [role="dialog"]')) return
       if (e.key === ' ' && target.closest('button')) return
       if (['ArrowRight', 'ArrowLeft', 'Home', 'End', ' '].includes(e.key)) setStage('review')
-      if (e.key === 'ArrowRight') go(ply + 1)
-      else if (e.key === 'ArrowLeft') go(ply - 1)
-      else if (e.key === 'Home') go(0)
-      else if (e.key === 'End') go(total)
-      else if (e.key === ' ' && !retry) setPlaying((p) => !p)
+      if (e.key === 'ArrowRight') { if (activeVariation) variationStep(activeVariation.cursor + 1); else go(ply + 1) }
+      else if (e.key === 'ArrowLeft') { if (activeVariation) variationStep(activeVariation.cursor - 1); else go(ply - 1) }
+      else if (e.key === 'Home') { if (activeVariation) variationStep(0); else go(0) }
+      else if (e.key === 'End') { if (activeVariation) variationStep(activeVariation.moves.length); else go(total) }
+      else if (e.key === ' ' && !retry && !activeVariation) setPlaying((p) => !p)
       else if (e.key.toLowerCase() === 'f') flip()
       else return
       e.preventDefault()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [review, stage, ply, total, go, flip, retry])
+  }, [review, stage, ply, total, go, flip, retry, activeVariation, variationStep])
 
   // Autoplay.
   useEffect(() => {
@@ -222,31 +345,34 @@ export default function App() {
     if (!review) return
     const m = review.moves[p - 1]
     setPlaying(false)
+    setPracticeVisited(true)
     setShowBest(false)
     setPly(p)
     setRetry({ ply: p, phase: 'try', fen: m.fen_before, tries: 0 })
+    setActiveVariationId(null)
+    window.requestAnimationFrame(() => boardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }))
   }, [review])
 
   const onRetryMove = useCallback((from: string, to: string, promotion?: string): boolean => {
-    if (!review || !retry || retry.phase !== 'try') return false
+    if (!review || !retry || (retry.phase !== 'try' && retry.phase !== 'wrong')) return false
     const m = review.moves[retry.ply - 1]
     const chess = new Chess(m.fen_before)
     let san: string
     try {
       san = chess.move({ from, to, promotion }).san
     } catch {
-      if (settings.sounds) play('illegal', settings.volume)
       return false
     }
     const uci = from + to + (promotion ?? '')
     const tries = retry.tries + 1
-    const base = { ply: retry.ply, tries, attempt: { from, to } }
+    const requestId = ++attemptId.current
+    const base = { ply: retry.ply, tries, attempt: { from, to }, attemptFen: chess.fen(), requestId }
     setRetry({ ...base, phase: 'checking', fen: chess.fen() })
     if (settings.sounds) play(soundForSan(san), settings.volume)
     const finish = (result: RetryResult) => {
-      if (settings.sounds) play(result.correct ? 'correct' : 'wrong', settings.volume)
+      if (settings.sounds) play('notify', settings.volume)
       setRetry((cur) => {
-        if (!cur || cur.ply !== base.ply || cur.phase !== 'checking') return cur
+        if (!cur || cur.requestId !== requestId || cur.phase !== 'checking') return cur
         if (result.correct) return { ...base, phase: 'correct', fen: chess.fen(), result }
         return { ...base, phase: tries >= 2 ? 'solution' : 'wrong', fen: m.fen_before, result }
       })
@@ -258,25 +384,56 @@ export default function App() {
         .then(finish)
         .catch((e) => {
           if (e instanceof GoneError) finish(localRetryResult(m, uci, san))
-          else setRetry((cur) => (cur && cur.phase === 'checking' ? { ...cur, phase: 'try', fen: m.fen_before, error: String(e.message ?? e) } : cur))
+          else setRetry((cur) => (cur && cur.requestId === requestId && cur.phase === 'checking' ? { ...cur, phase: 'try', fen: m.fen_before, error: String(e.message ?? e) } : cur))
         })
     }
     return true
   }, [review, retry, settings.sounds, settings.volume])
 
-  const me: Side = you ?? orientation
-  const myMistakes = useMemo(
-    () => (review ? review.moves.filter((m) => m.mover === me && RETRY_LABELS.includes(m.ep_label)).map((m) => m.ply) : []),
-    [review, me],
+  const mistakes = useMemo(
+    () => (review ? review.moves.filter((m) => RETRY_LABELS.includes(m.ep_label)).map((m) => m.ply) : []),
+    [review],
   )
   const nextMistake = useCallback(() => {
-    if (!myMistakes.length) return
-    go(myMistakes.find((p) => p > ply) ?? myMistakes[0])
-  }, [myMistakes, ply, go])
+    if (!mistakes.length) return
+    go(mistakes.find((p) => p > ply) ?? mistakes[0])
+  }, [mistakes, ply, go])
 
   const move = review && ply > 0 ? review.moves[ply - 1] : null
-  const position = review ? review.positions[retry ? retry.ply - 1 : ply] : null
-  const fen = retry ? retry.fen : review ? (move ? move.fen_after : review.start_fen) : START_FEN
+  const showingBest = stage === 'review' && !!move && !retry && !activeVariation && showBest && !!move.best_from && !!move.best_to
+  const position = review ? review.positions[retry ? retry.ply - 1 : showingBest ? ply - 1 : ply] : null
+  const fen = variationFen ?? (retry ? retry.fen : review ? (showingBest ? move.fen_before : move ? move.fen_after : review.start_fen) : START_FEN)
+
+  useEffect(() => {
+    if (!move || !BAD_LABELS.includes(move.ep_label) || stage !== 'review') return
+    let live = true
+    const fen = move.fen_after
+    analyseVariation(fen).then((ev) => {
+      if (!live) return
+      const board = new Chess(fen)
+      const moves: VariationMove[] = []
+      for (const uci of (ev.pv_uci ?? []).slice(0, 4)) {
+        try {
+          const played = board.move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+          moves.push({ san: played.san, uci, fen: board.fen() })
+        } catch { break }
+      }
+      setReplyHint({ fen, moves })
+    }).catch(() => { if (live) setReplyHint(null) })
+    return () => { live = false }
+  }, [move, stage])
+
+  const openReplyLine = useCallback(() => {
+    if (!move || !replyHint || replyHint.fen !== move.fen_after || !replyHint.moves.length) return
+    const id = ++variationId.current
+    setVariations((list) => [...list, {
+      id, anchorPly: move.ply, firstPly: move.ply + 1, anchorFen: move.fen_after,
+      moves: replyHint.moves, cursor: 0,
+      explanation: `After ${move.san}, the engine’s strongest reply is ${replyHint.moves[0].san}. Step through the line on the board or move either side’s pieces to explore.`,
+    }])
+    setActiveVariationId(id)
+    boardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
+  }, [move, replyHint])
 
   const graphValues = useMemo(() => {
     if (!review) return []
@@ -290,9 +447,9 @@ export default function App() {
 
   const headers = review?.headers ?? pending
   const clockFor = (side: Side): string | null => {
-    if (!review) return null
+    if (!review || activeVariation) return null
     // Most recent known clock for `side` at or before the shown position.
-    for (let i = Math.min(ply - 1, review.moves.length - 1); i >= 0; i--) {
+    for (let i = Math.min(retry ? retry.ply - 2 : ply - 1, review.moves.length - 1); i >= 0; i--) {
       const m = review.moves[i]
       if (m.mover === side && m.clock_sec !== null) return formatClock(m.clock_sec)
     }
@@ -323,22 +480,46 @@ export default function App() {
       evalText = engineScore(position).replace('+', '')
     }
   }
+  if (evaluationFen) {
+    const value = variationEval?.fen === evaluationFen ? variationEval : null
+    if (value) {
+      const p = { fen, cp: value.cp, mate: value.mate, white_ep: 0.5, white_lichess: 0.5 }
+      whiteShare = engineWhiteShare(p)
+      evalText = engineScore(p).replace('+', '')
+    } else {
+      whiteShare = 0.5
+      evalText = '…'
+    }
+  }
 
   const inReview = stage === 'review' && review
-  // Mistakes show the best move automatically (like Chess.com); the button toggles it either way.
-  const autoBest = move ? BAD_LABELS.includes(move.ep_label) : false
-  const bestVisible = autoBest !== showBest
-  let arrow = inReview && !retry && move && move.best_from && move.best_to && !TOP_LABELS.includes(move.ep_label) && bestVisible
-    ? { from: move.best_from, to: move.best_to }
-    : null
+  const replyUci = move && replyHint?.fen === move.fen_after ? replyHint.moves[0]?.uci : null
+  let arrow: { from: string; to: string; color?: string } | null = showingBest && move
+    ? { from: move.best_from as string, to: move.best_to as string, color: 'var(--c-best)' }
+    : inReview && !retry && !activeVariation && move && BAD_LABELS.includes(move.ep_label) && replyUci
+      ? { from: replyUci.slice(0, 2), to: replyUci.slice(2, 4), color: 'var(--arrow)' }
+      : null
   if (retry && move && retry.phase === 'solution' && move.best_from && move.best_to) arrow = { from: move.best_from, to: move.best_to }
+  if (activeVariation) {
+    const next = activeVariation.moves[activeVariation.cursor]
+    arrow = next ? { from: next.uci.slice(0, 2), to: next.uci.slice(2, 4) } : null
+  }
 
-  const boardInput: BoardInput | null = inReview && retry && retry.phase === 'try' && move ? { side: move.mover, onMove: onRetryMove } : null
-  let lastMove = inReview && move ? { from: move.from, to: move.to } : null
-  let badge = inReview && move ? { square: move.to, label: move.ep_label } : null
+  const boardInput: BoardInput | null = inReview && activeVariation
+    ? { side: fen.split(' ')[1] === 'w' ? 'white' : 'black', onMove: onVariationMove, onIllegal: () => { if (settings.sounds) play('illegal', settings.volume) } }
+    : inReview && retry?.phase === 'correct'
+      ? { side: fen.split(' ')[1] === 'w' ? 'white' : 'black', onMove: continueAttempt, onIllegal: () => { if (settings.sounds) play('illegal', settings.volume) } }
+    : inReview && retry && (retry.phase === 'try' || retry.phase === 'wrong') && move ? { side: move.mover, onMove: onRetryMove, onIllegal: () => { if (settings.sounds) play('illegal', settings.volume) } } : null
+  let lastMove = inReview && move && !showingBest ? { from: move.from, to: move.to } : null
+  let badge = inReview && move && !showingBest ? { square: move.to, label: move.ep_label } : null
   if (retry) {
     lastMove = retry.attempt && (retry.phase === 'checking' || retry.phase === 'correct') ? retry.attempt : null
     badge = retry.phase === 'correct' && retry.attempt && retry.result ? { square: retry.attempt.to, label: retry.result.label } : null
+  }
+  if (activeVariation) {
+    const current = activeVariation.moves[activeVariation.cursor - 1]
+    lastMove = current ? { from: current.uci.slice(0, 2), to: current.uci.slice(2, 4) } : null
+    badge = null
   }
   const canRetry = !!move && RETRY_LABELS.includes(move.ep_label)
 
@@ -352,7 +533,7 @@ export default function App() {
         <div className="topbar-actions">
           <a className="btn btn-ghost btn-sm" href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
           {review && (
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setStage('import'); setPlaying(false); setRetry(null) }}>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setStage('import'); setPlaying(false); setRetry(null); setActiveVariationId(null); setHandoffLink(null) }}>
               New game
             </button>
           )}
@@ -361,14 +542,14 @@ export default function App() {
         </div>
       </header>
       <main className={`layout ${stage === 'import' || stage === 'analyzing' ? 'layout-welcome' : ''}`}>
-        <section className="left">
+        <section className="left" ref={boardRef}>
           {stage === 'import' || stage === 'analyzing' ? <Welcome colors={BOARD_THEMES[settings.theme]} /> : <BoardArea
             fen={fen}
             orientation={orientation}
             white={whiteP}
             black={blackP}
             input={boardInput}
-            inputSession={retry ? `retry-${retry.ply}` : null}
+            inputSession={activeVariation ? `variation-${activeVariation.id}` : retry ? `retry-${retry.ply}` : null}
             lastMove={lastMove}
             badge={badge}
             arrow={arrow}
@@ -383,7 +564,8 @@ export default function App() {
           <div className="panel-head">
             <span className="panel-title">{stage === 'import' ? 'Review a game' : 'Game Review'}</span>
             <HelpMenu kind="labels" />
-            {review && stage !== 'import' && (
+            {evaluationFen && <span className="practice-mode">Engine · practice line</span>}
+            {review && stage !== 'import' && !evaluationFen && (
               <div className="evaluation-mode">
                 <div className="seg" role="group" aria-label="Evaluation mode">
                   <button type="button" aria-pressed={mode === 'chances'} className={mode === 'chances' ? 'on' : ''} onClick={() => setMode('chances')} title="Expected points at these players' level">
@@ -403,6 +585,7 @@ export default function App() {
               {error && (
                 <div className="error banner" role="alert">
                   <span>{error}</span>
+                  {handoffLink && <span>Check the game link and Chess.com username below, or choose Paste PGN.</span>}
                   {lastPgn && (
                     <button type="button" className="link-btn" onClick={() => analyze(lastPgn.pgn, lastPgn.side)}>Try again</button>
                   )}
@@ -423,10 +606,10 @@ export default function App() {
                 <strong>{progress.total ? `${Math.round(progress.done / progress.total * 100)}%` : 'Starting Stockfish…'}</strong>
                 {progress.total > 1 && <span>Analyzing move {Math.max(1, progress.done - 1)} of {progress.total - 1}</span>}
                 <span className="muted">{progress.done > 1 && progress.elapsed > 0
-                  ? `About ${Math.max(1, Math.ceil((progress.total - progress.done) * progress.elapsed / progress.done / 60))} min left`
+                  ? (() => { const seconds = Math.max(1, Math.ceil((progress.total - progress.done) * progress.elapsed / progress.done)); return seconds < 60 ? `About ${seconds} sec left` : `About ${Math.ceil(seconds / 60)} min left` })()
                   : 'Estimating time remaining…'}</span>
               </div>
-              <button type="button" className="btn btn-ghost" onClick={() => { abort.current?.abort(); setStage('import') }}>
+              <button type="button" className="btn btn-ghost" onClick={() => { handoffToken.current++; abort.current?.abort(); setStage('import') }}>
                 Cancel
               </button>
               <div className="skeleton-block" aria-hidden>
@@ -445,26 +628,34 @@ export default function App() {
               axisLabel={mode === 'chances' ? '50%' : '0.0'}
               onStart={() => { setStage('review'); go(Math.max(ply, 1)) }}
               onJump={(p) => { setStage('review'); go(p) }}
+              onPractice={(p) => { setStage('review'); startRetry(p) }}
             />
           )}
 
           {inReview && (
             <div className="panel-body review">
-              {retry && move ? (
+              {activeVariation ? (
+                <div className="variation-panel">
+                  <h2>Your line <span className="variation-position">{activeVariation.cursor} / {activeVariation.moves.length}</span></h2>
+                  <p>{activeVariation.explanation}</p>
+                  {activeVariation.moves[activeVariation.cursor] && <div className="variation-next">Arrow: {activeVariation.moves[activeVariation.cursor].san} is next in the analyzed line. Tap a move below or move a piece to explore.</div>}
+                  <div className="coach-actions">
+                    {retry && <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setActiveVariationId(null); setRetry((cur) => cur && review ? { ...cur, phase: 'try', fen: review.moves[cur.ply - 1].fen_before, tries: cur.phase === 'wrong' ? cur.tries : 0, result: undefined, attempt: undefined, attemptFen: undefined } : cur) }}>Back to puzzle</button>}
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => go(activeVariation.anchorPly)}>Original move</button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => go(activeVariation.anchorPly + 1)}>Continue game</button>
+                  </div>
+                </div>
+              ) : retry && move ? (
                 <Coach text={retryCoach(move, retry)} label={retry.phase === 'correct' ? retry.result?.label : undefined}>
                   {retry.phase === 'try' && (
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRetry(null)}>Cancel</button>
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRetry(null)}>Return to game</button>
                   )}
-                  {retry.phase === 'wrong' && (
-                    <>
-                      <button type="button" className="btn btn-primary btn-sm" onClick={() => setRetry({ ...retry, phase: 'try', attempt: undefined, error: undefined })}>Try again</button>
-                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRetry({ ...retry, phase: 'solution' })}>Show solution</button>
-                    </>
-                  )}
+                  {retry.result && <button type="button" className="btn btn-secondary btn-sm" onClick={openAttemptLine}>Show why · play line</button>}
+                  {retry.phase === 'wrong' && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setRetry({ ...retry, phase: 'solution' })}>Show solution</button>}
                   {(retry.phase === 'correct' || retry.phase === 'solution') && (
                     <>
-                      <button type="button" className="btn btn-primary btn-sm" onClick={() => go(ply + 1)}>Continue</button>
-                      {myMistakes.some((p) => p !== ply) && (
+                      <button type="button" className="btn btn-primary btn-sm" onClick={() => go(ply + 1)}>Continue original game</button>
+                      {mistakes.some((p) => p !== ply) && (
                         <button type="button" className="btn btn-ghost btn-sm" onClick={nextMistake}>Next mistake</button>
                       )}
                     </>
@@ -472,9 +663,12 @@ export default function App() {
                 </Coach>
               ) : (
                 <Coach text={move ? moveCoach(review, move) : startCoach(review)} label={move?.ep_label} ai={move ? notes[move.ply] ?? null : null}>
+                  {showingBest && <span className="best-position-note">Board shows the position before {move?.san}.</span>}
                   <button type="button" data-tour="retry" className="btn btn-primary btn-sm" disabled={!canRetry} onClick={() => startRetry(ply)}>Retry</button>
-                  {myMistakes.length > 0 && (
-                    <button type="button" className="btn btn-ghost btn-sm" onClick={nextMistake} title={`Your mistakes as ${me}`}>
+                  {move && BAD_LABELS.includes(move.ep_label) && <button type="button" className="btn btn-secondary btn-sm" disabled={replyHint?.fen !== move.fen_after || !replyHint.moves.length} onClick={openReplyLine}>Play the reply</button>}
+                  {variations.filter((v) => v.anchorPly === ply).map((v, i) => <button type="button" key={v.id} className="btn btn-ghost btn-sm" onClick={() => setActiveVariationId(v.id)}>Your line {i + 1}</button>)}
+                  {mistakes.length > 0 && (
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={nextMistake} title="Next mistake by either player">
                       Next mistake
                     </button>
                   )}
@@ -485,40 +679,40 @@ export default function App() {
                   )}
                 </Coach>
               )}
-              <div className="graph-wrap" data-tour="graph">
+              {!activeVariation && <div className="graph-wrap" data-tour="graph">
                 <Graph values={graphValues} moves={review.moves} chances={review.positions.map((p) => p.white_ep)} current={ply} markers={markers} onSelect={go} axisLabel={mode === 'chances' ? '50%' : '0.0'} />
-              </div>
-              <MoveList moves={review.moves} current={ply} onSelect={go} />
+              </div>}
+              <MoveList moves={review.moves} current={activeVariation ? -1 : ply} onSelect={go} variation={activeVariation ? { anchorPly: activeVariation.anchorPly, firstPly: activeVariation.firstPly, cursor: activeVariation.cursor, moves: activeVariation.moves, onSelect: variationStep } : null} />
               <Controls
-                onFirst={() => go(0)}
-                onPrev={() => go(ply - 1)}
-                onNext={() => go(ply + 1)}
-                onLast={() => go(total)}
+                onFirst={() => activeVariation ? variationStep(0) : go(0)}
+                onPrev={() => activeVariation ? variationStep(activeVariation.cursor - 1) : go(ply - 1)}
+                onNext={() => activeVariation ? variationStep(activeVariation.cursor + 1) : go(ply + 1)}
+                onLast={() => activeVariation ? variationStep(activeVariation.moves.length) : go(total)}
                 onTogglePlay={() => setPlaying((p) => !p)}
                 onFlip={flip}
                 playing={playing}
-                atStart={ply === 0}
-                atEnd={ply === total}
-                retrying={!!retry}
+                atStart={activeVariation ? activeVariation.cursor === 0 : ply === 0}
+                atEnd={activeVariation ? activeVariation.cursor === activeVariation.moves.length : ply === total}
+                retrying={!!retry || !!activeVariation}
               />
-              <div className="panel-actions two">
+              {!activeVariation && <div className="panel-actions two">
                 <button type="button" className="btn btn-ghost" onClick={() => { setRetry(null); setPlaying(false); setStage('summary') }}>
                   Summary
                 </button>
                 <button
                   type="button"
-                  className={`btn ${arrow ? 'btn-secondary' : 'btn-primary'}`}
+                  className={`btn ${showingBest ? 'btn-secondary' : 'btn-primary'}`}
                   disabled={!move || !!retry || TOP_LABELS.includes(move.ep_label)}
                   onClick={() => setShowBest((s) => !s)}
                 >
-                  {arrow ? 'Hide best' : 'Show best'}
+                  {showingBest ? 'Return to played move' : 'Show best move'}
                 </button>
-              </div>
+              </div>}
             </div>
           )}
         </aside>
       </main>
-      {inReview && !retry && <ReviewTour onShowRetry={() => {
+      {inReview && !retry && !practiceVisited && <ReviewTour onShowRetry={() => {
         const first = review.moves.find((m) => RETRY_LABELS.includes(m.ep_label))
         if (first) go(first.ply)
       }} />}

@@ -107,7 +107,12 @@ describe('helpers', () => {
     const f = vi.fn(async () => new Response('[Result "1-0"]\n\n1. e4 e5 *', { status: 200 }))
     const game = await gameFromUrl('https://lichess.org/abcdefgh', undefined, f as unknown as typeof fetch)
     expect(game.pgn).toContain('1. e4 e5')
-    expect(f.mock.calls[0][0]).toBe('https://lichess.org/game/export/abcdefgh?clocks=false&evals=false')
+    expect(f.mock.calls[0][0]).toBe('https://lichess.org/game/export/abcdefgh?clocks=true&evals=false')
+  })
+
+  it('explains when a Lichess link has no completed result', async () => {
+    const f = vi.fn(async () => new Response('[Result "*"]\n\n1. e4 e5 *', { status: 200 }))
+    await expect(gameFromUrl('https://lichess.org/abcdefgh', undefined, f as unknown as typeof fetch)).rejects.toThrow(/still in progress/)
   })
 
   it('finds a Chess.com game in the supplied player’s recent archive', async () => {

@@ -16,6 +16,7 @@ interface Props {
   axisLabel?: string
   onStart: () => void
   onJump: (ply: number) => void
+  onPractice: (ply: number) => void
 }
 
 const PHASES: [Phase, string][] = [['opening', 'Opening'], ['middlegame', 'Middlegame'], ['endgame', 'Endgame']]
@@ -48,7 +49,7 @@ function GameRating({ est, rating }: { est: Review['summary']['white']['estimate
   )
 }
 
-export function Summary({ review, coach, graphValues, axisLabel, onStart, onJump }: Props) {
+export function Summary({ review, coach, graphValues, axisLabel, onStart, onJump, onPractice }: Props) {
   const [showAll, setShowAll] = useState(false)
   const { white: ws, black: bs } = review.summary
   const used = LABEL_ORDER.filter((l) => ws.labels[l] || bs.labels[l])
@@ -81,7 +82,7 @@ export function Summary({ review, coach, graphValues, axisLabel, onStart, onJump
           <div className="pa-name"><span className="side-chip side-black" aria-label="Black" />{black}</div>
           <div className="acc">{bs.accuracy.toFixed(1)}</div>
         </div>
-        {(ws.estimated_rating || bs.estimated_rating) && (
+        {(ws.estimated_rating || bs.estimated_rating) ? (
           <div
             className="game-rating"
             title="The rating of players who typically play as well as you did in this game, judged by how much each move gave away."
@@ -90,7 +91,8 @@ export function Summary({ review, coach, graphValues, axisLabel, onStart, onJump
             <span className="gr-mid">Game rating <InfoTip label="Game rating">{RATING_HELP}</InfoTip></span>
             <GameRating est={bs.estimated_rating} rating={review.black_elo} />
           </div>
-        )}
+        ) : null}
+        {(!ws.estimated_rating || !bs.estimated_rating) && <p className="fine-print">Game rating needs at least 10 moves by each player; a dash means that player made too few moves.</p>}
       </section>
 
       <section className="sum-section" aria-label="Moves">
@@ -141,10 +143,10 @@ export function Summary({ review, coach, graphValues, axisLabel, onStart, onJump
       {keyMoves.length > 0 && (
         <section className="sum-section key-moments" aria-label="Key moments">
           <h3 className="sum-h">Key moments</h3>
-          {keyMoves.map((m) => (
+          <p className="key-explain">These percentages compare each move with the strongest move using the move-label model. The graph uses the separate Chances model.</p>
+          {keyMoves.map((m) => (<div className="key-row" key={m.ply}>
             <button
               type="button"
-              key={m.ply}
               className="key-item"
               onClick={() => onJump(m.ply)}
               aria-label={`${m.move_number}${m.mover === 'white' ? '.' : '...'} ${m.san}, ${LABELS[m.ep_label].name.toLowerCase()}: ${pct(m.ep_best)} to ${pct(m.ep_after)}`}
@@ -162,7 +164,8 @@ export function Summary({ review, coach, graphValues, axisLabel, onStart, onJump
               </span>
               <svg className="key-chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 10.5 8 6 12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
             </button>
-          ))}
+            {['mistake', 'miss', 'blunder'].includes(m.ep_label) && <button type="button" className="key-practice" onClick={() => onPractice(m.ply)}>Try this position before seeing the answer →</button>}
+          </div>))}
         </section>
       )}
 
@@ -170,7 +173,9 @@ export function Summary({ review, coach, graphValues, axisLabel, onStart, onJump
         {converted
           ? `Chess.com ratings converted to the Lichess scale for the model (${review.white_elo} → ~${review.white_model_elo}, ${review.black_elo} → ~${review.black_model_elo}). `
           : ''}
-        Stockfish depth {review.engine_depth}. Labels use expected-points loss at each player’s rating, clock and time control.
+        Stockfish depth {review.engine_depth}. Move labels use a board-focused, rating-aware model. Chances also uses available clock information.
+        {(!review.headers.WhiteElo || !review.headers.BlackElo) && ' Missing player ratings were estimated as 1500.'}
+        {review.moves.every((m) => m.clock_sec === null) && ' No per-move clocks were available for this game.'}
       </p>
       </div>
 

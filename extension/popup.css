@@ -36,11 +36,11 @@ body {
 .eyebrow {
   margin: 0 0 3px;
   color: #567565;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 750;
   letter-spacing: .11em;
 }
-.eyebrow span { padding: 0 2px; color: #a6b3a8; }
+.eyebrow span { padding: 0 2px; color: #567565; }
 h1 {
   margin: 0;
   color: #1d3025;
@@ -59,8 +59,8 @@ h1 {
   display: flex;
   align-items: center;
   gap: 7px;
-  color: #77847b;
-  font-size: 9px;
+  color: #52675a;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: .09em;
 }
@@ -73,7 +73,7 @@ h1 {
 .message {
   margin: 8px 0 0;
   color: #34483b;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -89,7 +89,7 @@ button {
   background: #237348;
   color: #fff;
   font: inherit;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 650;
   cursor: pointer;
   transition: background-color .14s ease;
@@ -105,8 +105,8 @@ button:focus-visible, a:focus-visible { outline: 2px solid #237348; outline-offs
   align-items: baseline;
   gap: 8px;
   margin-top: 12px;
-  color: #829087;
-  font-size: 9px;
+  color: #52675a;
+  font-size: 12px;
   line-height: 1.4;
 }
 .footer a { flex: none; color: #47745a; text-decoration: none; }

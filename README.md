@@ -2,7 +2,7 @@
 
 # ♞ elo101
 
-**Free chess game review that judges every move by your real chances, at your rating, on your clock.**
+**Free chess game review with rating-aware move labels and clock-aware chances.**
 
 [![CI](https://github.com/NazmulHayat/ChessCoach/actions/workflows/ci.yml/badge.svg)](https://github.com/NazmulHayat/ChessCoach/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
@@ -14,7 +14,7 @@
 
 ### [**▶ Try it: elo101.vercel.app**](https://elo101.vercel.app/)
 
-No account, nothing uploaded. Stockfish, the models and the review all run in your browser.
+No account. Stockfish, the models and the review run in your browser; public game imports contact Chess.com or Lichess directly.
 
 <img src="docs/images/demo.gif" alt="Reviewing Morphy's Opera Game in the browser, stepping to the Brilliant queen sacrifice" width="900">
 
@@ -24,7 +24,7 @@ No account, nothing uploaded. Stockfish, the models and the review all run in yo
 
 Stockfish says **+1.5** whoever is playing. But +1.5 for two 800s with 10 seconds left is not +1.5 for two 2200s in a rapid game.
 
-elo101 learns **expected points**: how often a player at *this rating*, in *this time control*, with *this much time left*, actually scores from a position. It is trained on millions of Lichess games. Every move is labelled by how much it changed those chances, Chess.com-style (Best → Blunder, plus Great, Miss and Brilliant).
+elo101 learns **expected points** from millions of Lichess games. The Chances view estimates the result at these players' ratings and available clocks. A separate board-focused model uses the players' ratings to judge moves Chess.com-style (Best → Blunder, plus Great, Miss and Brilliant). Accuracy uses an engine-based formula; game rating follows that accuracy.
 
 ## Highlights
 

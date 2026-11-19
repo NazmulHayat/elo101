@@ -25,7 +25,7 @@ export function Graph({ values, chances = values, moves = [], current, markers, 
   const line = values.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' L')
   const selected = hover ?? current ?? 0
   const move = moves[selected - 1]
-  const description = `${move ? `${move.move_number}${move.mover === 'white' ? '.' : '...'} ${move.san} · ${LABELS[move.ep_label].name}` : 'Starting position'} · White’s chances ${Math.round((chances[selected] ?? .5) * 100)}%`
+  const description = `${move ? `${move.move_number}${move.mover === 'white' ? '.' : '...'} ${move.san} · ${LABELS[move.ep_label].name}` : 'Starting position'} · White’s expected score ${Math.round((chances[selected] ?? .5) * 100)}%`
 
   function pointerPly(clientX: number) {
     const r = ref.current?.getBoundingClientRect()

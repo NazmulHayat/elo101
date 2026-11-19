@@ -4,7 +4,7 @@ import { useReducedMotion } from '../lib/motion'
 const STEPS = [
   { target: 'graph', title: 'Spot the turning points', body: 'Hover or tap the graph to explore the game. Click a point to jump to that position.' },
   { target: 'moves', title: 'Explore any move', body: 'Pick a move from the list to see its label, position and coach explanation.' },
-  { target: 'retry', title: 'Turn a mistake into practice', body: 'On a mistake, miss or blunder, choose Retry and find a better move on the board.' },
+  { target: 'retry', title: 'Turn a mistake into practice', body: 'Choose Retry, move a piece, then use Show why to watch the reply. You can keep moving pieces in your own line.' },
 ]
 
 export function ReviewTour({ onShowRetry }: { onShowRetry: () => void }) {

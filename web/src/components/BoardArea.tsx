@@ -82,6 +82,7 @@ function PlayerBar({ p, cap }: { p: PlayerInfo; cap: Captured }) {
 export interface BoardInput {
   side: Side
   onMove: (from: string, to: string, promotion?: string) => boolean
+  onIllegal?: () => void
 }
 
 interface Props {
@@ -96,7 +97,7 @@ interface Props {
   black: PlayerInfo
   lastMove: { from: string; to: string } | null
   badge: Badge | null
-  arrow: { from: string; to: string } | null
+  arrow: { from: string; to: string; color?: string } | null
   whiteShare: number
   evalText: string
   colors?: { light: string; dark: string }
@@ -181,13 +182,16 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
       return
     }
     if (selected && targets.includes(square)) {
-      input.onMove(selected, square, isPromotion(selected, square) ? 'q' : undefined)
+      if (!input.onMove(selected, square, isPromotion(selected, square) ? 'q' : undefined)) input.onIllegal?.()
       setSelected(null)
-    } else setSelected(null)
+    } else {
+      if (selected) input.onIllegal?.()
+      setSelected(null)
+    }
   }
 
   const arrows = useMemo(
-    () => (arrow ? [[arrow.from as Square, arrow.to as Square, 'var(--arrow)'] as [Square, Square, string]] : []),
+    () => (arrow ? [[arrow.from as Square, arrow.to as Square, arrow.color ?? 'var(--arrow)'] as [Square, Square, string]] : []),
     [arrow],
   )
 
@@ -206,7 +210,7 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
           <span key={evalText} className={`eval-text ${bottomAhead ? 'eval-bottom' : 'eval-top'}`}>{evalText}</span>
         </div>
       }>
-        <div className="board" role="group" aria-label={inputSession ? 'Retry position: drag a piece or tap its start and destination' : 'Chessboard'}
+        <div className="board" role="group" aria-label={inputSession?.startsWith('variation-') ? 'Your line: move either side’s pieces to explore' : inputSession ? 'Retry position: drag a piece or tap its start and destination' : 'Chessboard'}
           style={{ touchAction: inputSession ? 'none' : 'pan-y' }}
           onPointerDown={(e) => {
             if (onStep && !inputSession && e.pointerType !== 'mouse') swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY, time: performance.now() }
@@ -233,7 +237,9 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
                 const cur = live.current.input
                 if (!cur) return false
                 const promo = isPromotion(from, to) ? piece[1].toLowerCase() : undefined
-                return cur.onMove(from, to, promo)
+                const accepted = cur.onMove(from, to, promo)
+                if (!accepted) cur.onIllegal?.()
+                return accepted
               }}
               onSquareClick={onSquareClick}
               areArrowsAllowed={false}

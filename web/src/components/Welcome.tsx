@@ -9,7 +9,7 @@ export function Welcome({ colors }: { colors: { light: string; dark: string } })
   return (
     <div className="welcome">
       <h1>Free game review, right in your browser</h1>
-      <p className="welcome-pitch">Chess.com-style move labels, accuracy and game rating, judged by your real chances at your rating. Retry your mistakes on the board. Nothing uploaded; Stockfish runs locally.</p>
+      <p className="welcome-pitch">Review your moves with Stockfish. Labels judge board quality at your rating; Chances estimates the result using available clocks. Try better moves, watch the reply, and explore your own lines. Analysis runs in your browser.</p>
       <figure className="welcome-board">
         <Mat orientation="white">
           <div className="board">
@@ -28,6 +28,11 @@ export function Welcome({ colors }: { colors: { light: string; dark: string } })
         </Mat>
         <figcaption>The sample game ends in Légal’s mate: <strong>7.Nd5#</strong></figcaption>
       </figure>
+      <section className="method-summary" aria-label="How the review works">
+        <h2>How your review is judged</h2>
+        <p><strong>Move labels</strong> compare your move with Stockfish’s best at your rating. <strong>Chances</strong> estimates the expected result using ratings and available clocks. <strong>Accuracy</strong> summarizes engine-based move quality; game rating estimates one-game performance from it.</p>
+        <a href="https://github.com/NazmulHayat/ChessCoach/blob/main/docs/methodology.md" target="_blank" rel="noopener noreferrer">Read the methodology ↗</a>
+      </section>
     </div>
   )
 }

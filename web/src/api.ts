@@ -69,7 +69,18 @@ export async function streamReview(
 ): Promise<Review> {
   const m = await models()
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-  const result = await reviewGame(pgn, m, enginePool().analyse, { depth: ENGINE_DEPTH, progress: onProgress })
+  const currentPool = enginePool()
+  const cancel = () => {
+    currentPool.close()
+    if (pool === currentPool) pool = null
+  }
+  signal?.addEventListener('abort', cancel, { once: true })
+  let result: ReviewResult
+  try {
+    result = await reviewGame(pgn, m, currentPool.analyse, { depth: ENGINE_DEPTH, progress: onProgress })
+  } finally {
+    signal?.removeEventListener('abort', cancel)
+  }
   if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
   const id = crypto.randomUUID()
   reviews.set(id, result)
@@ -77,6 +88,12 @@ export async function streamReview(
   const review: Review & { rows?: unknown } = { ...result, review_id: id }
   delete review.rows
   return review
+}
+
+/** Analyse a hypothetical position without changing the recorded review. */
+export async function analyseVariation(fen: string) {
+  const [result] = await enginePool().analyse([fen])
+  return result
 }
 
 /** Score a move tried in retry mode. Throws GoneError if this review is no longer in memory. */

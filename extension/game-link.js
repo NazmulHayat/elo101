@@ -40,8 +40,11 @@ const Elo101GameLink = (() => {
 
   function destination(gameUrl, username) {
     const url = new URL(APP_URL);
-    if (gameUrl) url.searchParams.set("game", gameUrl);
-    if (username) url.searchParams.set("user", username);
+    if (gameUrl?.includes("/game/daily/")) url.searchParams.set("import", "pgn");
+    else {
+      if (gameUrl) url.searchParams.set("game", gameUrl);
+      if (username) url.searchParams.set("user", username);
+    }
     return url.toString();
   }
 

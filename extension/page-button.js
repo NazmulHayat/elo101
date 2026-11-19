@@ -26,8 +26,10 @@
 
   function update() {
     const gameUrl = Elo101GameLink.canonicalGameUrl(location.href);
-    label.textContent = gameUrl ? "Review with Elo101" : "Elo101";
-    button.title = gameUrl ? "Open this game in Elo101" : "Open Elo101";
+    host.style.display = gameUrl ? "block" : "none";
+    const daily = gameUrl?.includes("/game/daily/");
+    label.textContent = daily ? "Paste daily PGN in Elo101" : "Review with Elo101";
+    button.title = daily ? "Open Elo101 to paste this daily game's PGN" : "Open this game in Elo101";
     button.setAttribute("aria-label", button.title);
   }
 

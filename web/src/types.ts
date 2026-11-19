@@ -122,4 +122,9 @@ export interface RetryResult {
   correct: boolean
   best_san: string | null
   best_line_san: string[]
+  reason?: string | null
+  reply_uci?: string | null
+  reply_san?: string | null
+  reply_fen?: string | null
+  continuation?: { uci: string; san: string; fen: string }[]
 }

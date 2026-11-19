@@ -7,6 +7,14 @@ chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
   gameUrl = Elo101GameLink.canonicalGameUrl(tab?.url ?? "");
   if (!gameUrl) {
     message.textContent = "Open a Chess.com or Lichess game to review it.";
+    reviewButton.querySelector("span").textContent = "Open Elo101";
+    reviewButton.disabled = false;
+    return;
+  }
+  if (gameUrl.includes("/game/daily/")) {
+    message.textContent = "Daily games need a copied PGN. Open Elo101 to paste it.";
+    reviewButton.querySelector("span").textContent = "Open PGN import";
+    reviewButton.disabled = false;
     return;
   }
 
@@ -38,6 +46,5 @@ chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
 });
 
 reviewButton.addEventListener("click", () => {
-  if (!gameUrl) return;
   chrome.tabs.create({ url: Elo101GameLink.destination(gameUrl, playerUsername) });
 });
