@@ -4,39 +4,37 @@ interface Props {
   onNext: () => void
   onLast: () => void
   onTogglePlay: () => void
-  onFlip: () => void
   playing: boolean
   atStart: boolean
   atEnd: boolean
   retrying: boolean
 }
 
-const Icon = ({ d }: { d: string }) => (
-  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden>
-    <path d={d} fill="currentColor" />
-  </svg>
+const stroke = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+
+const Icon = ({ children }: { children: React.ReactNode }) => (
+  <svg viewBox="0 0 16 16" width="18" height="18" aria-hidden>{children}</svg>
 )
 
-export function Controls({ onFirst, onPrev, onNext, onLast, onTogglePlay, onFlip, playing, atStart, atEnd, retrying }: Props) {
+export function Controls({ onFirst, onPrev, onNext, onLast, onTogglePlay, playing, atStart, atEnd, retrying }: Props) {
   return (
     <div className="controls">
-      <button type="button" disabled={atStart} onClick={onFirst} aria-label="First move" title="First (Home)">
-        <Icon d="M6 5h2v14H6zM20 5v14L9 12z" />
+      <button type="button" data-testid="ctl-first" disabled={atStart} onClick={onFirst} aria-label="First move" title="First (Home)">
+        <Icon><path d="M4 3v10M12 3 6 8l6 5" {...stroke} strokeWidth={2} /></Icon>
       </button>
-      <button type="button" disabled={atStart} onClick={onPrev} aria-label="Previous move" title="Previous (←)">
-        <Icon d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z" />
+      <button type="button" data-testid="ctl-prev" disabled={atStart} onClick={onPrev} aria-label="Previous move" title="Previous (←)">
+        <Icon><path d="M10 3 5 8l5 5" {...stroke} strokeWidth={2.2} /></Icon>
       </button>
-      <button type="button" className="ctl-play" disabled={atEnd || retrying} aria-pressed={playing} onClick={onTogglePlay} aria-label={playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
-        {playing ? <Icon d="M7 5h4v14H7zM13 5h4v14h-4z" /> : <Icon d="M8 5v14l11-7z" />}
+      <button type="button" data-testid="ctl-play" className="ctl-play" disabled={atEnd || retrying} aria-pressed={playing} onClick={onTogglePlay} aria-label={playing ? 'Pause' : 'Play'} title="Play / pause (Space)">
+        {playing
+          ? <Icon><path d="M4.5 3h2.6v10H4.5zM8.9 3h2.6v10H8.9z" fill="currentColor" /></Icon>
+          : <Icon><path d="M5 3l8 5-8 5z" fill="currentColor" /></Icon>}
       </button>
-      <button type="button" disabled={atEnd} onClick={onNext} aria-label="Next move" title="Next (→)">
-        <Icon d="M8.6 16.6 10 18l6-6-6-6-1.4 1.4 4.6 4.6z" />
+      <button type="button" data-testid="ctl-next" disabled={atEnd} onClick={onNext} aria-label="Next move" title="Next (→)">
+        <Icon><path d="m6 3 5 5-5 5" {...stroke} strokeWidth={2.2} /></Icon>
       </button>
-      <button type="button" disabled={atEnd} onClick={onLast} aria-label="Last move" title="Last (End)">
-        <Icon d="M16 5h2v14h-2zM4 5v14l11-7z" />
-      </button>
-      <button type="button" className="ctl-flip" onClick={onFlip} aria-label="Flip board" title="Flip board (F)">
-        <Icon d="M7 3 3 7h3v10h2V7h3zm10 18 4-4h-3V7h-2v10h-3z" />
+      <button type="button" data-testid="ctl-last" disabled={atEnd} onClick={onLast} aria-label="Last move" title="Last (End)">
+        <Icon><path d="M12 3v10M4 3l6 5-6 5" {...stroke} strokeWidth={2} /></Icon>
       </button>
     </div>
   )

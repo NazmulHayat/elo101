@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import type { ReviewMove } from '../types'
+import { LABELS, LIST_ICON_LABELS } from '../labels'
+import type { ReviewMove, Side } from '../types'
 import { LabelIcon } from './LabelIcon'
 
 interface Props {
@@ -13,6 +14,12 @@ interface Props {
     moves: { san: string; uci: string }[]
     onSelect: (cursor: number) => void
   } | null
+}
+
+// Chess.com-style figurines: filled for White's moves, outlined for Black's.
+const FIGURINES: Record<Side, Record<string, string>> = {
+  white: { K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞' },
+  black: { K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘' },
 }
 
 export function MoveList({ moves, current, onSelect, variation }: Props) {
@@ -35,18 +42,29 @@ export function MoveList({ moves, current, onSelect, variation }: Props) {
     rows.push([moves[i], moves[i + 1]])
   }
 
-  const cell = (m: ReviewMove | undefined) =>
-    m ? (
-      <button type="button" aria-current={m.ply === current ? 'step' : undefined} aria-label={`${m.move_number}${m.mover === 'white' ? '.' : '...'} ${m.san}`} data-ply={m.ply} className={`move-cell ${m.ply === current ? 'current' : ''}`} onClick={() => onSelect(m.ply)}>
-        <LabelIcon label={m.ep_label} size={16} />
-        <span>{m.san}</span>
+  const cell = (m: ReviewMove | undefined) => {
+    if (!m) return <span />
+    const icon = LIST_ICON_LABELS.includes(m.ep_label)
+    const piece = /^([KQRBN])(.*)$/.exec(m.san)
+    return (
+      <button
+        type="button"
+        aria-current={m.ply === current ? 'step' : undefined}
+        aria-label={`${m.move_number}${m.mover === 'white' ? '.' : '...'} ${m.san}, ${LABELS[m.ep_label].name.toLowerCase()}`}
+        data-ply={m.ply}
+        data-testid="move-cell"
+        className={`move-cell ${m.ply === current ? 'current' : ''} ${icon ? '' : 'no-icon'}`}
+        style={icon ? { color: LABELS[m.ep_label].color } : undefined}
+        onClick={() => onSelect(m.ply)}
+      >
+        {icon && <LabelIcon label={m.ep_label} size={20} />}
+        <span aria-hidden="true">{piece ? <><span className="fig">{FIGURINES[m.mover][piece[1]]}</span>{piece[2]}</> : m.san}</span>
       </button>
-    ) : (
-      <span />
     )
+  }
 
   return (
-    <div className="move-list" data-tour="moves" ref={box}>
+    <div className="move-list" data-tour="moves" data-testid="move-list" ref={box}>
       {rows.map(([w, b]) => (
         <div className="move-turn" key={w.ply}>
           <div className="move-row">

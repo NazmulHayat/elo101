@@ -1,12 +1,14 @@
 import { Chess } from 'chess.js'
-import { createContext, forwardRef, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { createContext, forwardRef, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties } from 'react'
 import { Chessboard } from 'react-chessboard'
 import type { CustomSquareProps, Piece, Square } from 'react-chessboard/dist/chessboard/types'
 import { useReducedMotion } from '../lib/motion'
 import { highlight } from '../lib/highlight'
 import { capturedFrom, type Captured, type PieceType } from '../lib/material'
 import type { Label, Side } from '../types'
+import type { BoardThemeSpec } from '../lib/settings'
 import { LabelIcon } from './LabelIcon'
+import { KingIcon } from './PieceIcon'
 
 export interface PlayerInfo {
   name: string
@@ -20,14 +22,25 @@ interface Badge {
   label: Label
 }
 
-// The square renderer must be a stable component, so the current badge reaches it via context.
-const BadgeContext = createContext<Badge | null>(null)
+interface SquareInfo {
+  badge: Badge | null
+  orientation: Side
+}
 
-const BadgeSquare = forwardRef<HTMLDivElement, CustomSquareProps>(function BadgeSquare({ children, square, style }, ref) {
-  const badge = useContext(BadgeContext)
+// The square renderer must be a stable component, so the current badge and orientation reach it via context.
+const SquareContext = createContext<SquareInfo>({ badge: null, orientation: 'white' })
+
+/** A square with its coordinates printed inside (rank on the left file, file on the bottom rank) and the move badge. */
+const BoardSquare = forwardRef<HTMLDivElement, CustomSquareProps>(function BoardSquare({ children, square, squareColor, style }, ref) {
+  const { badge, orientation } = useContext(SquareContext)
+  const onLight = squareColor === 'white'
+  const leftFile = orientation === 'white' ? 'a' : 'h'
+  const bottomRank = orientation === 'white' ? '1' : '8'
   return (
     <div ref={ref} style={{ ...style, position: 'relative' }}>
       {children}
+      {square[0] === leftFile && <span className={`coord coord-rank ${onLight ? 'on-light' : 'on-dark'}`} aria-hidden>{square[1]}</span>}
+      {square[1] === bottomRank && <span className={`coord coord-file ${onLight ? 'on-light' : 'on-dark'}`} aria-hidden>{square[0]}</span>}
       {badge && badge.square === square && (
         <span className="square-badge" key={`${badge.square}-${badge.label}`}>
           <LabelIcon label={badge.label} size={26} />
@@ -36,6 +49,38 @@ const BadgeSquare = forwardRef<HTMLDivElement, CustomSquareProps>(function Badge
     </div>
   )
 })
+
+type BoardProps = Omit<ComponentProps<typeof Chessboard>, 'customSquare' | 'customDarkSquareStyle' | 'customLightSquareStyle' | 'customBoardStyle' | 'showBoardNotation'> & {
+  theme: BoardThemeSpec
+  badge?: Badge | null
+}
+
+/** react-chessboard in an elo101 board theme: one picture (Ice marble) or flat squares, coordinates inside the corner squares. */
+export function ThemedBoard({ theme, badge = null, boardOrientation = 'white', ...rest }: BoardProps) {
+  const square = theme.image ? { backgroundColor: 'transparent' } : null
+  const info = useMemo(() => ({ badge, orientation: boardOrientation }), [badge, boardOrientation])
+  return (
+    <div
+      className="themed-board"
+      style={{ '--sq-hl': theme.highlight, '--coord-light': theme.coordLight, '--coord-dark': theme.coordDark } as CSSProperties}
+    >
+      <SquareContext.Provider value={info}>
+        <Chessboard
+          {...rest}
+          boardOrientation={boardOrientation}
+          customSquare={BoardSquare}
+          customDarkSquareStyle={square ?? { backgroundColor: theme.dark }}
+          customLightSquareStyle={square ?? { backgroundColor: theme.light }}
+          customBoardStyle={{
+            borderRadius: '6px',
+            ...(theme.image ? { backgroundImage: `url(${import.meta.env.BASE_URL}${theme.image})`, backgroundSize: '100% 100%' } : {}),
+          }}
+          showBoardNotation={false}
+        />
+      </SquareContext.Provider>
+    </div>
+  )
+}
 
 // Captured opponent pieces: filled glyphs (U+FE0E keeps ♟ from turning into an emoji), coloured per side in CSS.
 const GLYPH: Record<PieceType, string> = { q: '♛\uFE0E', r: '♜\uFE0E', b: '♝\uFE0E', n: '♞\uFE0E', p: '♟\uFE0E' }
@@ -62,18 +107,18 @@ function CapturedPieces({ side, cap }: { side: Side; cap: Captured }) {
   )
 }
 
-function PlayerBar({ p, cap }: { p: PlayerInfo; cap: Captured }) {
+function PlayerBar({ p, cap, toMove }: { p: PlayerInfo; cap: Captured; toMove: boolean }) {
   return (
     <div className="player-bar">
-      <span className={`side-chip side-${p.side}`} aria-label={p.side === 'white' ? 'White' : 'Black'} />
+      <span className="avatar" aria-label={p.side === 'white' ? 'White' : 'Black'} role="img"><KingIcon side={p.side} /></span>
       <div className="player-id">
         <div className="player-line">
           <span className="player-name">{p.name}</span>
-          {p.elo !== null && <span className="player-elo">{p.elo}</span>}
+          {p.elo !== null && <span className="player-elo">({p.elo})</span>}
         </div>
         <CapturedPieces side={p.side} cap={cap} />
       </div>
-      {p.clock && <span className={`clock clock-${p.side}`}>{p.clock}</span>}
+      {p.clock && <span className={`clock ${toMove ? 'clock-on' : ''}`}>{p.clock}</span>}
     </div>
   )
 }
@@ -100,32 +145,11 @@ interface Props {
   arrow: { from: string; to: string; color?: string } | null
   whiteShare: number
   evalText: string
-  colors?: { light: string; dark: string }
+  theme: BoardThemeSpec
   onStep?: (direction: -1 | 1) => void
 }
 
-const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1']
-
-/** The club mat: a green margin around the board with printed coordinates; `side` slots in beside the ranks (the eval bar). */
-export function Mat({ orientation, side, children }: { orientation: Side; side?: ReactNode; children: ReactNode }) {
-  const files = orientation === 'white' ? FILES : [...FILES].reverse()
-  const ranks = orientation === 'white' ? RANKS : [...RANKS].reverse()
-  const fileRow = (pos: string) => <div className={`mat-files mat-${pos}`} aria-hidden>{files.map((f) => <span key={f}>{f}</span>)}</div>
-  const rankCol = (pos: string) => <div className={`mat-ranks mat-${pos}`} aria-hidden>{ranks.map((r) => <span key={r}>{r}</span>)}</div>
-  return (
-    <div className={`mat ${side ? 'mat-with-side' : ''}`}>
-      {side}
-      {fileRow('top')}
-      {rankCol('left')}
-      {children}
-      {rankCol('right')}
-      {fileRow('bottom')}
-    </div>
-  )
-}
-
-export function BoardArea({ fen, input, inputSession, orientation, white, black, lastMove, badge, arrow, whiteShare, evalText, colors, onStep }: Props) {
+export function BoardArea({ fen, input, inputSession, orientation, white, black, lastMove, badge, arrow, whiteShare, evalText, theme, onStep }: Props) {
   const swipe = useRef<{ id: number; x: number; y: number; time: number } | null>(null)
   const reducedMotion = useReducedMotion()
   const captured = useMemo(() => capturedFrom(fen), [fen])
@@ -146,7 +170,7 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
   const squareStyles = useMemo(() => {
     const s: Record<string, Record<string, string>> = {}
     if (lastMove) {
-      for (const sq of [lastMove.from, lastMove.to]) s[sq] = highlight(sq)
+      for (const sq of [lastMove.from, lastMove.to]) s[sq] = highlight()
     }
     if (selected) s[selected] = { boxShadow: 'inset 0 0 0 999px var(--sq-select)' }
     // Dot on empty targets, ring on captures (a dot would hide under the piece).
@@ -197,19 +221,19 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
 
   const top = orientation === 'white' ? black : white
   const bottom = orientation === 'white' ? white : black
-  // Eval bar fills from the bottom with the bottom player's colour.
+  const turn: Side = fen.split(' ')[1] === 'b' ? 'black' : 'white'
+  // Eval bar fills from the bottom with the bottom player's colour; the value sits at the leading side's end.
   const bottomShare = orientation === 'white' ? whiteShare : 1 - whiteShare
   const bottomAhead = bottomShare >= 0.5
 
   return (
     <div className={`board-area ${input ? 'board-input' : ''}`}>
-      <PlayerBar p={top} cap={captured[top.side]} />
-      <Mat orientation={orientation} side={
-        <div className={`eval-bar ${orientation === 'black' ? 'eval-flipped' : ''}`} aria-label={`${whiteShare >= .5 ? 'White' : 'Black'} ahead: ${evalText}`}>
+      <PlayerBar p={top} cap={captured[top.side]} toMove={turn === top.side} />
+      <div className="board-row">
+        <div className={`eval-bar ${orientation === 'black' ? 'eval-flipped' : ''}`} data-testid="eval-bar" aria-label={`${whiteShare >= .5 ? 'White' : 'Black'} ahead: ${evalText}`}>
           <div className="eval-fill" style={{ height: `${bottomShare * 100}%` }} />
           <span key={evalText} className={`eval-text ${bottomAhead ? 'eval-bottom' : 'eval-top'}`}>{evalText}</span>
         </div>
-      }>
         <div className="board" role="group" aria-label={inputSession?.startsWith('variation-') ? 'Your line: move either side’s pieces to explore' : inputSession ? 'Retry position: drag a piece or tap its start and destination' : 'Chessboard'}
           style={{ touchAction: inputSession ? 'none' : 'pan-y' }}
           onPointerDown={(e) => {
@@ -225,37 +249,32 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
             if (performance.now() - start.time < 900 && Math.abs(dx) > 42 && Math.abs(dx) > Math.abs(dy) * 1.4) onStep(dx < 0 ? 1 : -1)
           }}
         >
-          <BadgeContext.Provider value={badge}>
-            <Chessboard
-              key={inputSession ?? 'view'}
-              id="review-board"
-              position={fen}
-              boardOrientation={orientation}
-              arePiecesDraggable={!!inputSession}
-              isDraggablePiece={({ piece }) => !!live.current.input && piece[0] === live.current.myColor}
-              onPieceDrop={(from, to, piece) => {
-                const cur = live.current.input
-                if (!cur) return false
-                const promo = isPromotion(from, to) ? piece[1].toLowerCase() : undefined
-                const accepted = cur.onMove(from, to, promo)
-                if (!accepted) cur.onIllegal?.()
-                return accepted
-              }}
-              onSquareClick={onSquareClick}
-              areArrowsAllowed={false}
-              animationDuration={reducedMotion ? 0 : 200}
-              customArrows={arrows}
-              customSquare={BadgeSquare}
-              customSquareStyles={squareStyles}
-              customDarkSquareStyle={{ backgroundColor: colors?.dark ?? 'var(--sq-dark)' }}
-              customLightSquareStyle={{ backgroundColor: colors?.light ?? 'var(--sq-light)' }}
-              customBoardStyle={{ borderRadius: '2px', boxShadow: 'var(--shadow-board)' }}
-              showBoardNotation={false}
-            />
-          </BadgeContext.Provider>
+          <ThemedBoard
+            key={inputSession ?? 'view'}
+            theme={theme}
+            badge={badge}
+            id="review-board"
+            position={fen}
+            boardOrientation={orientation}
+            arePiecesDraggable={!!inputSession}
+            isDraggablePiece={({ piece }) => !!live.current.input && piece[0] === live.current.myColor}
+            onPieceDrop={(from, to, piece) => {
+              const cur = live.current.input
+              if (!cur) return false
+              const promo = isPromotion(from, to) ? piece[1].toLowerCase() : undefined
+              const accepted = cur.onMove(from, to, promo)
+              if (!accepted) cur.onIllegal?.()
+              return accepted
+            }}
+            onSquareClick={onSquareClick}
+            areArrowsAllowed={false}
+            animationDuration={reducedMotion ? 0 : 200}
+            customArrows={arrows}
+            customSquareStyles={squareStyles}
+          />
         </div>
-      </Mat>
-      <PlayerBar p={bottom} cap={captured[bottom.side]} />
+      </div>
+      <PlayerBar p={bottom} cap={captured[bottom.side]} toMove={turn === bottom.side} />
     </div>
   )
 }

@@ -1,5 +1,4 @@
-/** Last-move tint, opaque per square colour so it stays yellow on dark squares instead of muddying them. */
-export function highlight(square: string): Record<string, string> {
-  const dark = (square.charCodeAt(0) - 97 + Number(square[1])) % 2 === 1
-  return { boxShadow: `inset 0 0 0 999px var(--sq-highlight-${dark ? 'dark' : 'light'})` }
+/** Last-move tint, laid over the square (or the board picture) in the board theme's highlight colour. */
+export function highlight(): Record<string, string> {
+  return { boxShadow: 'inset 0 0 0 999px var(--sq-hl)' }
 }

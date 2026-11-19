@@ -7,7 +7,7 @@ import type { GameListItem } from '../types'
 
 type Tab = 'chesscom' | 'lichess' | 'link' | 'pgn'
 
-const TAB_NAMES: Record<Tab, string> = { chesscom: 'Chess.com', lichess: 'Lichess', link: 'Game link', pgn: 'Paste PGN' }
+const TAB_NAMES: Record<Tab, string> = { chesscom: 'Chess.com', lichess: 'Lichess', link: 'Game link', pgn: 'PGN' }
 
 function remembered(key: string): string {
   try {
@@ -93,7 +93,7 @@ export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, y
   }
 
   return (
-    <div className="panel-body">
+    <div className="panel-body import-body">
       <div className="tabs" role="group" aria-label="Import source">
         {(Object.keys(TAB_NAMES) as Tab[]).map((t) => (
           <button key={t} type="button" aria-pressed={tab === t} className={`tab ${tab === t ? 'on' : ''}`} onClick={() => switchTab(t)}>
@@ -159,10 +159,10 @@ export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, y
                         vs {opp} {oppElo ? <span className="muted">({oppElo})</span> : null}
                       </span>
                       <span className="game-meta">
-                        <svg className="time-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" /><path d="M8 4v4l3 2" fill="none" stroke="currentColor" /></svg> {timeClassLabel(g.time_class)} · {g.time_control} · {meWhite ? 'White' : 'Black'}
+                        <svg className="time-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" /><path d="M8 4v4l3 2" fill="none" stroke="currentColor" /></svg> {timeClassLabel(g.time_class)} · {g.time_control} · {meWhite ? 'White' : 'Black'} · <span className="game-date">{shortDate(g.end_time)}</span>
                       </span>
                     </span>
-                    <span className="game-date">{shortDate(g.end_time)}</span>
+                    <span className="game-go">Review ›</span>
                   </button>
                 )
               })}
@@ -171,10 +171,6 @@ export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, y
           {!games && !error && !loading && <p className="muted pad">Enter a username to list recent games, then pick one to review.</p>}
         </>
       )}
-      <div className="sample-game">
-        <button type="button" className="btn btn-secondary btn-block" onClick={() => onAnalyze(SAMPLE_PGN, 'white')}>Try a sample game</button>
-        <p className="muted">A queen sacrifice. A seven-move lesson.</p>
-      </div>
       {recent.length > 0 && (
         <section className="recent-games" aria-label="Recently reviewed">
           <h2>Recently reviewed</h2>
@@ -186,6 +182,10 @@ export function ImportPanel({ onAnalyze, handoff }: { onAnalyze: (pgn: string, y
           ))}
         </section>
       )}
+      <div className="sample-game">
+        <button type="button" className="btn btn-secondary btn-block" data-testid="sample-game" onClick={() => onAnalyze(SAMPLE_PGN, 'white')}>Try a sample game</button>
+        <p className="muted">A queen sacrifice in seven moves.</p>
+      </div>
     </div>
   )
 }
