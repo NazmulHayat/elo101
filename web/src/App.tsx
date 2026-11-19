@@ -678,9 +678,9 @@ export default function App() {
               )}
               {canShowBest && (
                 <button type="button" data-testid="show-best" className="btn act-best" aria-pressed={showingBest} onClick={() => setShowBest((s) => !s)}
-                  aria-label={showingBest ? 'Show the move played' : `Show the best move, ${move?.best_san ?? ''}`} title={showingBest ? 'Show played' : `Best: ${move?.best_san ?? ''}`}>
+                  aria-label={showingBest ? 'Show the move played' : `Show the best move, ${move?.best_san ?? ''}`} title={showingBest ? `Back to the move played, ${move?.san ?? ''}` : `Show the best move, ${move?.best_san ?? ''}, on the board`}>
                   <svg className="act-star" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.55 4.43 1.07 6.27L12 17.13 6.38 20.1l1.07-6.27L2.9 9.4l6.3-.9z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
-                  <span>{showingBest ? 'Played' : 'Best'}</span>
+                  <span>{showingBest ? `Back to ${move?.san ?? ''}` : `Show ${move?.best_san ?? 'best'}`}</span>
                 </button>
               )}
               {ply < total ? (
