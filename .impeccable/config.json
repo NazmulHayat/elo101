@@ -8,6 +8,12 @@
         "value": "geist",
         "createdAt": "2026-11-19T13:27:43.958Z",
         "reason": "Geist is elo101's display font per DESIGN.md (project design system)"
+      },
+      {
+        "rule": "design-system-font",
+        "value": "ui\",sans-serif",
+        "createdAt": "2026-11-19T15:01:50.648Z",
+        "reason": "Claude: fallback fragment of the documented Figtree stack (\"Segoe UI\", sans-serif), same as web/src/index.css"
       }
     ]
   }
