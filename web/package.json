@@ -13,6 +13,7 @@
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "chess.js": "1.4.0",
+    "posthog-js": "^1.453.0",
     "react": "^19.1.0",
     "react-chessboard": "^4.7.3",
     "react-dom": "^19.1.0",
