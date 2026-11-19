@@ -1,5 +1,8 @@
 const Elo101GameLink = (() => {
   const APP_URL = "https://elo101.vercel.app/";
+  // Eight-letter Lichess pages that look like game ids.
+  const LICHESS_PAGES = new Set(["analysis", "practice", "training", "tutorial", "streamer", "features",
+    "password", "contacts", "calendar", "insights", "settings", "playlist"]);
 
   function canonicalGameUrl(rawUrl) {
     let url;
@@ -13,13 +16,15 @@ const Elo101GameLink = (() => {
     if (host === "chess.com") {
       const gamePage = url.pathname.match(/^\/game\/(\d+)\/?$/i);
       if (gamePage) return `https://www.chess.com/game/live/${gamePage[1]}`;
-      const match = url.pathname.match(/^\/(?:game|analysis\/game)\/(live|daily)\/(\d+)\/?$/i);
+      // Also matches review/analysis sub-pages, e.g. /analysis/game/live/123/analysis.
+      const match = url.pathname.match(/^\/(?:game|analysis\/game)\/(live|daily)\/(\d+)(?:\/[^/]*)?\/?$/i);
       return match ? `https://www.chess.com/game/${match[1].toLowerCase()}/${match[2]}` : null;
     }
 
     if (host === "lichess.org") {
       const match = url.pathname.match(/^\/(?:game\/)?([a-z0-9]{8})(?:\/[^/]*)?\/?$/i);
-      return match ? `https://lichess.org/${match[1]}` : null;
+      if (!match || LICHESS_PAGES.has(match[1].toLowerCase())) return null;
+      return `https://lichess.org/${match[1]}`;
     }
 
     return null;

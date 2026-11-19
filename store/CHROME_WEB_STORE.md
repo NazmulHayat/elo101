@@ -11,6 +11,8 @@ Review a completed chess game in elo101 with one click.
 
 Open a completed Chess.com or Lichess game and click the Elo101 button on the page, or use the extension icon. Elo101 opens in a new tab, imports the game, then analyzes it with Stockfish and its rating-aware review models in your browser. Explore the turning points, move labels, accuracy, and retry your mistakes.
 
+When your game ends, a small elo101 bubble offers a free review. It shows nothing while you play: it never reads the board or moves, and never analyses a game in progress. You can turn the bubbles off from the extension icon.
+
 No elo101 account is required. The extension shows its button on Chess.com and Lichess only. It does not monitor other sites.
 
 Chess.com public game lookup may need a player username. Daily games are not supported by the link importer yet; you can paste their PGN in elo101.
@@ -30,7 +32,8 @@ Single purpose: Open the currently viewed completed Chess.com or Lichess game in
 Permission justifications:
 - activeTab: Read the current tab URL after the user opens the extension popup, to identify a supported game.
 - scripting: On Chess.com, read a player name from the current game page after the popup opens, so the app can find that game in public archives.
-- Chess.com and Lichess page access: Display the Elo101 launch button on those sites and identify the current game link when the button is clicked.
+- Chess.com and Lichess page access: Display the Elo101 launch button and post-game bubble on those sites, notice when the user's own game has ended (clock and result text only, never the board or moves), and identify the current game link when the button is clicked.
+- storage: Remember the "Pop up after games" setting, the last few game results (win/loss/draw only, for a losing-streak message) and which message was shown last, on this device only.
 
 Data handling: The extension reads the current game URL and, for Chess.com, may read a player name from page links. When the user selects Review game, it opens elo101.vercel.app with those values in the URL. The app fetches public game data directly from Chess.com or Lichess, analyzes it locally, and saves recent PGNs and preferences in the browser's local storage. No advertising or analytics are used.
 

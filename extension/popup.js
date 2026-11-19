@@ -48,3 +48,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, async ([tab]) => {
 reviewButton.addEventListener("click", () => {
   chrome.tabs.create({ url: Elo101GameLink.destination(gameUrl, playerUsername) });
 });
+
+const popupsToggle = document.getElementById("popups");
+chrome.storage.local.get("popups").then(({ popups }) => { popupsToggle.checked = popups !== false; });
+popupsToggle.addEventListener("change", () => chrome.storage.local.set({ popups: popupsToggle.checked }));

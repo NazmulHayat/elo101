@@ -99,6 +99,17 @@ button:disabled { background: #9aaa9f; color: #f7f9f7; cursor: not-allowed; }
 button:focus-visible, a:focus-visible { outline: 2px solid #237348; outline-offset: 3px; }
 .button-arrow { font-size: 15px; line-height: 1; }
 
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: #34483b;
+  font-size: 13px;
+  cursor: pointer;
+}
+.toggle input { width: 16px; height: 16px; margin: 0; accent-color: #237348; }
+
 .footer {
   display: flex;
   justify-content: space-between;

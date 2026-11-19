@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "Elo101 Game Review",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Review a completed Chess.com or Lichess game with Elo101.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "storage"],
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
@@ -17,7 +17,11 @@
   },
   "content_scripts": [{
     "matches": ["https://chess.com/*", "https://*.chess.com/*", "https://lichess.org/*"],
-    "js": ["game-link.js", "page-button.js"],
+    "js": ["game-link.js", "coach-lines.js", "site-watch.js", "page-button.js"],
     "run_at": "document_idle"
+  }],
+  "web_accessible_resources": [{
+    "resources": ["icons/icon-128.png"],
+    "matches": ["https://chess.com/*", "https://*.chess.com/*", "https://lichess.org/*"]
   }]
 }
