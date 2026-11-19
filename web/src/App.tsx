@@ -557,6 +557,12 @@ export default function App() {
   const leaveReview = () => { setRetry(null); setPlaying(false); setActiveVariationId(null); setStage('summary') }
 
   const welcome = stage === 'import' || stage === 'analyzing'
+  const goHome = () => {
+    handoffToken.current++
+    abort.current?.abort()
+    setStage('import'); setPlaying(false); setRetry(null); setActiveVariationId(null); setHandoffLink(null)
+    window.scrollTo({ top: 0 })
+  }
   const panel = (
     <aside className={`panel panel-${stage}`}>
       {stage === 'import' && (
@@ -671,15 +677,16 @@ export default function App() {
                 </button>
               )}
               {canShowBest && (
-                <button type="button" data-testid="show-best" className="btn act-icon" aria-pressed={showingBest} onClick={() => setShowBest((s) => !s)}
+                <button type="button" data-testid="show-best" className="btn act-best" aria-pressed={showingBest} onClick={() => setShowBest((s) => !s)}
                   aria-label={showingBest ? 'Show the move played' : `Show the best move, ${move?.best_san ?? ''}`} title={showingBest ? 'Show played' : `Best: ${move?.best_san ?? ''}`}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.55 4.43 1.07 6.27L12 17.13 6.38 20.1l1.07-6.27L2.9 9.4l6.3-.9z" fill={showingBest ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+                  <svg className="act-star" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.55 4.43 1.07 6.27L12 17.13 6.38 20.1l1.07-6.27L2.9 9.4l6.3-.9z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+                  <span>{showingBest ? 'Played' : 'Best'}</span>
                 </button>
               )}
               {ply < total ? (
                 <button type="button" data-testid="next-move" className={`btn act-next ${canRetry ? '' : 'btn-primary'}`} onClick={() => go(ply + 1)} aria-label="Next move" title="Next (→)">
-                  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  {!canRetry && !canShowBest && <span>Next</span>}
+                  <span>Next</span>
+                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </button>
               ) : (
                 <button type="button" data-testid="next-move" className="btn btn-primary act-next" onClick={leaveReview}>Summary</button>
@@ -716,14 +723,14 @@ export default function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <div className="brand">
+        <a className="brand" href="/" aria-label="elo101 home" onClick={(e) => { e.preventDefault(); goHome() }}>
           <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" width={28} height={28} />
           <span>elo101</span>
-        </div>
+        </a>
         <nav className="topbar-actions" aria-label="Site">
           <a className="topbar-link" href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
           {review && (
-            <button type="button" className="btn btn-sm" onClick={() => { setStage('import'); setPlaying(false); setRetry(null); setActiveVariationId(null); setHandoffLink(null) }}>
+            <button type="button" className="btn btn-sm" onClick={goHome}>
               New game
             </button>
           )}

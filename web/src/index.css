@@ -100,7 +100,8 @@ button:disabled { cursor: not-allowed; }
   height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 0 20px; background: var(--topbar); border-bottom: 1px solid var(--line);
 }
-.brand { display: flex; align-items: center; gap: 10px; font: 800 18px/1 var(--display); letter-spacing: -.02em; }
+.brand { display: flex; align-items: center; gap: 10px; font: 800 18px/1 var(--display); letter-spacing: -.02em; color: inherit; text-decoration: none; border-radius: 10px; }
+.brand:hover span { color: var(--ink-2); }
 .brand img { border-radius: 8px; }
 .topbar-actions { display: flex; align-items: center; gap: 6px; }
 .topbar-link { padding: 8px 12px; border-radius: 9px; color: var(--ink-2); font-size: 13.5px; font-weight: 700; text-decoration: none; }
@@ -252,8 +253,9 @@ button:active:not(:disabled) { transform: translateY(1px); }
 .review-actions { flex: none; display: flex; gap: 8px; height: 48px; margin: 0 16px 16px; }
 .review-actions .btn { height: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; }
 .review-actions .act-retry { flex: 1.2; }
-.review-actions .act-icon { flex: none; width: 56px; padding: 0; color: var(--c-best); }
-.review-actions .act-icon[aria-pressed="true"] { background: color-mix(in srgb, var(--c-best) 18%, var(--btn)); }
+.review-actions .act-best { flex: none; min-width: 100px; }
+.review-actions .act-best .act-star { color: var(--c-best); }
+.review-actions .act-best[aria-pressed="true"] { background: color-mix(in srgb, var(--c-best) 20%, var(--btn)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-best) 55%, transparent); }
 .review-actions .act-next { flex: 1; }
 /* Game over: "Winner" on one king, the reason on the other. */
 .end-badge {
