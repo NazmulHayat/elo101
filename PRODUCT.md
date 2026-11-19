@@ -36,7 +36,7 @@ Moves are judged by **board-focused expected points at the players' rating**, wh
 
 ## Brand Commitments
 
-- Name: elo101. Knight on an ice-blue tile, `web/public/favicon.svg`.
+- Name: elo101. A white knight on a two-by-two ice-board squircle, `web/public/favicon.svg` (same as the extension icon).
 - Brand colour: ice blue `#3b8cff`, used for actions.
 - Move labels use elo101's own palette and squircle icons (see `DESIGN.md`); their meaning, glyphs and order stay familiar to Chess.com users and are binding.
 
