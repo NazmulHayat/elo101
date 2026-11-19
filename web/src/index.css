@@ -270,7 +270,8 @@ button:active:not(:disabled) { transform: translateY(1px); }
 .variation-panel h2 { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 0 0 8px; font: 800 17px/1.2 var(--display); }
 .variation-position { font: 700 12px/1.2 "Figtree", sans-serif; color: var(--muted); font-variant-numeric: tabular-nums; }
 .variation-panel p { margin: 0; color: var(--ink-2); font-size: 13.5px; line-height: 1.45; }
-.variation-next { margin-top: 8px; color: var(--link); font-size: 12.5px; font-weight: 700; }
+.variation-actions .var-step { width: 40px; padding-inline: 0; justify-content: center; }
+.variation-actions .var-step:disabled { opacity: .4; cursor: default; }
 
 /* ---------- graph ---------- */
 .graph-wrap { flex: none; padding: 12px 14px 14px; border-top: 1px solid var(--line); }

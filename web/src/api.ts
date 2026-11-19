@@ -1,6 +1,7 @@
 // Everything runs in the browser: Stockfish (WebAssembly workers), the EP models and the review logic, so the
 // app is a static site. Same function names as the old server client, so the UI didn't change.
-import { createEnginePool, type EnginePool } from './engine/pool'
+import { createLiveEngine, type LiveEngine, type LiveEval } from './engine/live'
+import { createEnginePool, ENGINE_FILE, type EnginePool } from './engine/pool'
 import { fetchGamesDirect, gameFromUrl } from './importers'
 import { loadBook, type Book } from './review/book'
 import { fetchTreeModel } from './review/lgbm'
@@ -91,9 +92,13 @@ export async function streamReview(
 }
 
 /** Analyse a hypothetical position without changing the recorded review. */
-export async function analyseVariation(fen: string) {
-  const [result] = await enginePool().analyse([fen])
-  return result
+let live: LiveEngine | null = null
+
+/** Streams a deepening eval for an explored position; the previous position's search is dropped. */
+export function analyseLive(fen: string, onEval: (e: LiveEval) => void): () => void {
+  live ??= createLiveEngine(`${base}${ENGINE_FILE}`)
+  live.analyse(fen, onEval)
+  return () => live?.stop()
 }
 
 /** Score a move tried in retry mode. Throws GoneError if this review is no longer in memory. */

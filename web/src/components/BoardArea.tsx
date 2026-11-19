@@ -1,5 +1,6 @@
 import { Chess } from 'chess.js'
-import { createContext, forwardRef, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties } from 'react'
+import { createContext, forwardRef, memo, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentProps, type CSSProperties } from 'react'
+import { TouchBackend } from 'react-dnd-touch-backend'
 import { Chessboard } from 'react-chessboard'
 import type { CustomSquareProps, Piece, Square } from 'react-chessboard/dist/chessboard/types'
 import { useReducedMotion } from '../lib/motion'
@@ -64,9 +65,19 @@ type BoardProps = Omit<ComponentProps<typeof Chessboard>, 'customSquare' | 'cust
 }
 
 /** react-chessboard in an elo101 board theme: one picture (Ice marble) or flat squares, coordinates inside the corner squares. */
-export function ThemedBoard({ theme, badge = null, ends = NO_ENDS, boardOrientation = 'white', ...rest }: BoardProps) {
-  const square = theme.image ? { backgroundColor: 'transparent' } : null
+// The browser's native drag-and-drop (react-chessboard's desktop default) trails the cursor; the touch backend
+// with mouse events follows pointer moves directly, so dragging feels as quick as clicking.
+const DND_OPTIONS = { enableMouseEvents: true }
+
+// Memoised: the review re-renders often (engine updates, clocks); the board only redraws when its own props change.
+export const ThemedBoard = memo(function ThemedBoard({ theme, badge = null, ends = NO_ENDS, boardOrientation = 'white', ...rest }: BoardProps) {
   const info = useMemo(() => ({ badge, orientation: boardOrientation, ends }), [badge, boardOrientation, ends])
+  const dark = useMemo(() => (theme.image ? { backgroundColor: 'transparent' } : { backgroundColor: theme.dark }), [theme])
+  const light = useMemo(() => (theme.image ? { backgroundColor: 'transparent' } : { backgroundColor: theme.light }), [theme])
+  const boardStyle = useMemo(() => ({
+    borderRadius: '6px',
+    ...(theme.image ? { backgroundImage: `url(${import.meta.env.BASE_URL}${theme.image})`, backgroundSize: '100% 100%' } : {}),
+  }), [theme])
   return (
     <div
       className="themed-board"
@@ -77,18 +88,17 @@ export function ThemedBoard({ theme, badge = null, ends = NO_ENDS, boardOrientat
           {...rest}
           boardOrientation={boardOrientation}
           customSquare={BoardSquare}
-          customDarkSquareStyle={square ?? { backgroundColor: theme.dark }}
-          customLightSquareStyle={square ?? { backgroundColor: theme.light }}
-          customBoardStyle={{
-            borderRadius: '6px',
-            ...(theme.image ? { backgroundImage: `url(${import.meta.env.BASE_URL}${theme.image})`, backgroundSize: '100% 100%' } : {}),
-          }}
+          customDarkSquareStyle={dark}
+          customLightSquareStyle={light}
+          customBoardStyle={boardStyle}
           showBoardNotation={false}
+          customDndBackend={TouchBackend}
+          customDndBackendOptions={DND_OPTIONS}
         />
       </SquareContext.Provider>
     </div>
   )
-}
+})
 
 // Captured opponent pieces: filled glyphs (U+FE0E keeps ♟ from turning into an emoji), coloured per side in CSS.
 const GLYPH: Record<PieceType, string> = { q: '♛\uFE0E', r: '♜\uFE0E', b: '♝\uFE0E', n: '♞\uFE0E', p: '♟\uFE0E' }
@@ -205,10 +215,13 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
   }, [fen, inputKey, selected])
   const targets = useMemo(() => targetMoves.map((m) => m.to as string), [targetMoves])
 
+  // The parent rebuilds lastMove / arrow / badge objects on every render: key these on their values instead.
+  const lastFrom = lastMove?.from ?? null
+  const lastTo = lastMove?.to ?? null
   const squareStyles = useMemo(() => {
     const s: Record<string, Record<string, string>> = {}
-    if (lastMove) {
-      for (const sq of [lastMove.from, lastMove.to]) s[sq] = highlight()
+    if (lastFrom && lastTo) {
+      for (const sq of [lastFrom, lastTo]) s[sq] = highlight()
     }
     if (selected) s[selected] = { boxShadow: 'inset 0 0 0 999px var(--sq-select)' }
     // Dot on empty targets, ring on captures (a dot would hide under the piece).
@@ -222,22 +235,24 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
       }
     }
     return s
-  }, [lastMove, selected, targetMoves])
+  }, [lastFrom, lastTo, selected, targetMoves])
 
   const myColor = input ? (input.side === 'white' ? 'w' : 'b') : null
   // react-chessboard can call drag/drop handlers from an earlier render; read the current values via refs.
-  const live = useRef({ input, fen, myColor })
-  live.current = { input, fen, myColor }
-  const isPromotion = (from: string, to: string) => {
+  const live = useRef({ input, fen, myColor, selected, targets })
+  live.current = { input, fen, myColor, selected, targets }
+  // Stable handlers (they read the latest values from `live`), so the memoised board isn't redrawn for them.
+  const isPromotion = useCallback((from: string, to: string) => {
     try {
       const p = new Chess(live.current.fen).get(from as Square)
       return !!p && p.type === 'p' && (to[1] === '8' || to[1] === '1')
     } catch {
       return false
     }
-  }
+  }, [])
 
-  function onSquareClick(square: Square, piece: Piece | undefined) {
+  const onSquareClick = useCallback((square: Square, piece: Piece | undefined) => {
+    const { input, myColor, selected, targets } = live.current
     if (!input) return
     if (piece && piece[0] === myColor) {
       setSelected(square === selected ? null : square)
@@ -250,12 +265,30 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
       if (selected) input.onIllegal?.()
       setSelected(null)
     }
-  }
+  }, [isPromotion])
 
+  const isDraggablePiece = useCallback(({ piece }: { piece: Piece }) => !!live.current.input && piece[0] === live.current.myColor, [])
+  const onPieceDrop = useCallback((from: Square, to: Square, piece: Piece) => {
+    const cur = live.current.input
+    if (!cur) return false
+    const promo = isPromotion(from, to) ? piece[1].toLowerCase() : undefined
+    const accepted = cur.onMove(from, to, promo)
+    if (!accepted) cur.onIllegal?.()
+    return accepted
+  }, [isPromotion])
+  const onPieceDragBegin = useCallback((piece: Piece, square: Square) => { if (live.current.input && piece[0] === live.current.myColor) setSelected(square) }, [])
+  const onPieceDragEnd = useCallback(() => setSelected(null), [])
+
+  const arrowFrom = arrow?.from ?? null
+  const arrowTo = arrow?.to ?? null
+  const arrowColor = arrow?.color ?? 'var(--arrow)'
   const arrows = useMemo(
-    () => (arrow ? [[arrow.from as Square, arrow.to as Square, arrow.color ?? 'var(--arrow)'] as [Square, Square, string]] : []),
-    [arrow],
+    () => (arrowFrom && arrowTo ? [[arrowFrom as Square, arrowTo as Square, arrowColor] as [Square, Square, string]] : []),
+    [arrowFrom, arrowTo, arrowColor],
   )
+  const badgeSquare = badge?.square ?? null
+  const badgeLabel = badge?.label ?? null
+  const stableBadge = useMemo(() => (badgeSquare && badgeLabel ? { square: badgeSquare, label: badgeLabel } : null), [badgeSquare, badgeLabel])
 
   const top = orientation === 'white' ? black : white
   const bottom = orientation === 'white' ? white : black
@@ -291,25 +324,18 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
           <ThemedBoard
             key={inputSession ?? 'view'}
             theme={theme}
-            badge={badge}
+            badge={stableBadge}
             ends={ends}
             id="review-board"
             position={fen}
             boardOrientation={orientation}
             arePiecesDraggable={!!inputSession}
-            isDraggablePiece={({ piece }) => !!live.current.input && piece[0] === live.current.myColor}
-            onPieceDrop={(from, to, piece) => {
-              const cur = live.current.input
-              if (!cur) return false
-              const promo = isPromotion(from, to) ? piece[1].toLowerCase() : undefined
-              const accepted = cur.onMove(from, to, promo)
-              if (!accepted) cur.onIllegal?.()
-              return accepted
-            }}
+            isDraggablePiece={isDraggablePiece}
+            onPieceDrop={onPieceDrop}
             onSquareClick={onSquareClick}
             // Dragging shows the same legal-move dots as tapping.
-            onPieceDragBegin={(piece, square) => { if (live.current.input && piece[0] === live.current.myColor) setSelected(square) }}
-            onPieceDragEnd={() => setSelected(null)}
+            onPieceDragBegin={onPieceDragBegin}
+            onPieceDragEnd={onPieceDragEnd}
             areArrowsAllowed={false}
             animationDuration={reducedMotion ? 0 : 200}
             customArrows={arrows}

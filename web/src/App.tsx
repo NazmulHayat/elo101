@@ -1,7 +1,7 @@
 import { Chess } from 'chess.js'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { analyseVariation, explainMove, fetchGameUrl, GoneError, health, retryMove, streamReview } from './api'
-import { moveCoach, retryCoach, startCoach, summaryCoach } from './coach'
+import { analyseLive, explainMove, fetchGameUrl, GoneError, health, retryMove, streamReview } from './api'
+import { formatLine, moveCoach, retryCoach, startCoach, summaryCoach } from './coach'
 import { BoardArea, type BoardInput, type PlayerInfo } from './components/BoardArea'
 import { Coach } from './components/Coach'
 import { Controls } from './components/Controls'
@@ -50,6 +50,7 @@ interface Variation {
   moves: VariationMove[]
   cursor: number
   explanation: string
+  title?: string
 }
 
 const RETRY_TOLERANCE = 0.02 // same as the server: within 2% of the best move counts as finding it
@@ -219,11 +220,8 @@ export default function App() {
   useEffect(() => {
     if (!evaluationFen) return
     let live = true
-    setVariationEval(null)
-    analyseVariation(evaluationFen).then((ev) => {
-      if (live) setVariationEval({ fen: evaluationFen, cp: ev.eval_cp_white, mate: ev.mate_white })
-    }).catch(() => { if (live) setVariationEval(null) })
-    return () => { live = false }
+    const stop = analyseLive(evaluationFen, (ev) => { if (live) setVariationEval({ fen: ev.fen, cp: ev.cp, mate: ev.mate }) })
+    return () => { live = false; stop() }
   }, [evaluationFen])
 
   const savedVariation = variations[variations.length - 1] ?? null
@@ -278,6 +276,29 @@ export default function App() {
     }
     boardRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' })
   }, [retry, review])
+
+  // Like Chess.com: the best move opens Stockfish's whole line, which you can step through with ← →.
+  const openBestLine = useCallback(() => {
+    if (!review || ply < 1) return
+    const m = review.moves[ply - 1]
+    const board = new Chess(m.fen_before)
+    const moves: VariationMove[] = []
+    for (const san of m.best_line_san.length ? m.best_line_san : [m.best_san]) {
+      try {
+        const played = board.move(san)
+        moves.push({ san: played.san, uci: played.from + played.to + (played.promotion ?? ''), fen: board.fen() })
+      } catch { break }
+    }
+    if (!moves.length) return
+    const id = ++variationId.current
+    setPlaying(false)
+    setShowBest(false)
+    setVariations([{
+      id, anchorPly: ply, firstPly: ply, anchorFen: m.fen_before, moves, cursor: 1, title: 'Best line',
+      explanation: `Instead of ${m.san}, Stockfish plays ${formatLine(moves.map((x) => x.san), ply, 8)}.`,
+    }])
+    setActiveVariationId(id)
+  }, [review, ply])
 
   const continueAttempt = useCallback((from: string, to: string, promotion?: string): boolean => {
     if (!retry?.result?.correct || !retry.attemptFen || !review) return false
@@ -507,7 +528,8 @@ export default function App() {
     }
   }
   if (evaluationFen) {
-    const value = variationEval?.fen === evaluationFen ? variationEval : null
+    // Keep the last eval on screen until the new position's first result lands (a few ms), so the bar doesn't flicker.
+    const value = variationEval
     if (value) {
       const p = { fen, cp: value.cp, mate: value.mate, white_ep: 0.5, white_lichess: 0.5 }
       whiteShare = engineWhiteShare(p)
@@ -633,13 +655,17 @@ export default function App() {
           </div>
           {activeVariation ? (
             <div className="variation-panel">
-              <h2>Your line <span className="variation-position">{activeVariation.cursor} / {activeVariation.moves.length}</span></h2>
+              <h2>{activeVariation.title ?? 'Your line'} <span className="variation-position">{activeVariation.cursor} / {activeVariation.moves.length}</span></h2>
               <p>{activeVariation.explanation}</p>
-              {activeVariation.moves[activeVariation.cursor] && <div className="variation-next">Arrow: {activeVariation.moves[activeVariation.cursor].san} is next in the analyzed line. Tap a move below or move a piece to explore.</div>}
-              <div className="coach-actions">
+              <div className="coach-actions variation-actions">
+                <button type="button" className="btn btn-sm var-step" data-testid="variation-prev" aria-label="Previous move in line" title="Previous (←)" disabled={activeVariation.cursor === 0} onClick={() => variationStep(activeVariation.cursor - 1)}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                <button type="button" className="btn btn-sm var-step" data-testid="variation-next" aria-label="Next move in line" title="Next (→)" disabled={activeVariation.cursor >= activeVariation.moves.length} onClick={() => variationStep(activeVariation.cursor + 1)}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
                 {retry && <button type="button" className="btn btn-sm" onClick={() => { setActiveVariationId(null); setRetry((cur) => cur && review ? { ...cur, phase: 'try', fen: review.moves[cur.ply - 1].fen_before, tries: cur.phase === 'wrong' ? cur.tries : 0, result: undefined, attempt: undefined, attemptFen: undefined } : cur) }}>Back to puzzle</button>}
-                <button type="button" className="btn btn-sm" onClick={() => go(activeVariation.anchorPly)}>Original move</button>
-                <button type="button" className="btn btn-sm" onClick={() => go(activeVariation.anchorPly + 1)}>Continue game</button>
+                <button type="button" className="btn btn-sm" data-testid="variation-back" onClick={() => go(activeVariation.anchorPly)}>Back to game</button>
               </div>
             </div>
           ) : retry && move ? (
@@ -677,10 +703,10 @@ export default function App() {
                 </button>
               )}
               {canShowBest && (
-                <button type="button" data-testid="show-best" className="btn act-best" aria-pressed={showingBest} onClick={() => setShowBest((s) => !s)}
-                  aria-label={showingBest ? 'Show the move played' : `Show the best move, ${move?.best_san ?? ''}`} title={showingBest ? `Back to the move played, ${move?.san ?? ''}` : `Show the best move, ${move?.best_san ?? ''}, on the board`}>
+                <button type="button" data-testid="show-best" className="btn act-best" onClick={openBestLine}
+                  aria-label={`Show the best line, starting ${move?.best_san ?? ''}`} title={`Step through Stockfish's best line, starting ${move?.best_san ?? ''}`}>
                   <svg className="act-star" width="17" height="17" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.55 4.43 1.07 6.27L12 17.13 6.38 20.1l1.07-6.27L2.9 9.4l6.3-.9z" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
-                  <span>{showingBest ? `Back to ${move?.san ?? ''}` : `Show ${move?.best_san ?? 'best'}`}</span>
+                  <span>Show {move?.best_san ?? 'best'} line</span>
                 </button>
               )}
               {ply < total ? (
@@ -693,7 +719,7 @@ export default function App() {
               )}
             </div>
           )}
-          <MoveList moves={review.moves} current={activeVariation ? -1 : ply} onSelect={go} variation={savedVariation ? { anchorPly: savedVariation.anchorPly, firstPly: savedVariation.firstPly, cursor: activeVariation ? savedVariation.cursor : -1, moves: savedVariation.moves, onSelect: openSavedVariation } : null} />
+          <MoveList moves={review.moves} current={activeVariation ? -1 : ply} onSelect={go} variation={savedVariation ? { anchorPly: savedVariation.anchorPly, firstPly: savedVariation.firstPly, cursor: activeVariation ? savedVariation.cursor : -1, moves: savedVariation.moves, title: savedVariation.title, onSelect: openSavedVariation } : null} />
           {!activeVariation && <div className="graph-wrap" data-tour="graph">
             <div className="graph-tabs">
               <div className="seg" role="tablist" aria-label="Graph and evaluation bar">
@@ -739,7 +765,7 @@ export default function App() {
         </nav>
       </header>
       {welcome ? (
-        <main className="home-main"><Home theme={BOARD_THEMES[settings.theme]}>{panel}</Home></main>
+        <main className="home-main"><Home theme={BOARD_THEMES.ice}>{panel}</Home></main>
       ) : (
       <main className="layout">
         <section className="left" ref={boardRef}>

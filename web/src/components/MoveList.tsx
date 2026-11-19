@@ -12,6 +12,7 @@ interface Props {
     firstPly: number
     cursor: number
     moves: { san: string; uci: string }[]
+    title?: string
     onSelect: (cursor: number) => void
   } | null
 }
@@ -75,7 +76,7 @@ export function MoveList({ moves, current, onSelect, variation }: Props) {
           {variation && (w.ply === variation.anchorPly || b?.ply === variation.anchorPly || (variation.anchorPly === 0 && w.ply === 1)) && (
             <div className="branch-row" aria-label="Explored line">
               <span className="branch-rule" aria-hidden="true" />
-              <span className="branch-label">Your line</span>
+              <span className="branch-label">{variation.title ?? 'Your line'}</span>
               <button type="button" className={`branch-move ${variation.cursor === 0 ? 'current' : ''}`} onClick={() => variation.onSelect(0)} aria-current={variation.cursor === 0 ? 'step' : undefined}>Start</button>
               {variation.moves.map((move, index) => {
                 const ply = variation.firstPly + index

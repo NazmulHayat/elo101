@@ -17,7 +17,7 @@ export interface EnginePool {
   close(): void
 }
 
-const ENGINE_FILE = 'engine/stockfish-18-lite-single.js'
+export const ENGINE_FILE = 'engine/stockfish-18-lite-single.js'
 
 function defaultSize(): number {
   const cores = typeof navigator !== 'undefined' && navigator.hardwareConcurrency ? navigator.hardwareConcurrency : 2

@@ -170,3 +170,12 @@ What was built, the numbers behind it, and the problems solved along the way. Ne
 - **Numbers on the page are real:** the Chances example is Morphy's Opera Game before 13.Rxd7 (Stockfish +5.2); the shipped Chances model gives White 93% for two 2400s, 84% for two 1600s and 69% for two 800s in a 10-minute game. The graph is the full Opera Game reviewed at 1500 vs 1500 (34 positions, 10 labelled moves). Recording and screenshots were captured from the running app with Chrome's screencast.
 - **Dark only:** the Appearance setting, the light tokens and the pre-paint theme scripts were removed from the app and the admin page.
 - **Extension 1.2.0 (2026-11-20):** new ice-board knight icon (16/32/48/128), four 1280×800 store screenshots and promo tiles in `store/screenshots/`, privacy page rewritten to cover PostHog and the post-game bubble; submitted to the Chrome Web Store for review.
+
+
+## Best line and a faster explore board (2026-11-20)
+
+- **Best line:** the best-move button now opens Stockfish's whole principal variation (up to 8 plies, already computed during the review) as a steppable line, like Chess.com's review. ‹ › buttons, ← → keys, a "Best line" branch in the move list, and Back to game.
+- **Live engine for exploring:** each explored position used to queue a cleared-hash depth-17 search that couldn't be cancelled, so quick moves stacked up and the eval bar sat on "…". A dedicated worker (`web/src/engine/live.ts`) now stops the old search, keeps its hash, streams one eval per depth (from depth 6 to 20) and caches the deepest result per position.
+- **Board re-renders:** the board redrew all 64 squares on every app render (eval ticks included) because arrows, highlights, badges, styles and handlers were new objects each time. `ThemedBoard` is memoised and its props are keyed on values / read through refs.
+- **Drag lag:** react-chessboard uses HTML5 drag-and-drop on desktop, whose throttled dragover makes the piece trail the cursor. Switched to the touch backend with mouse events; dragging now feels as quick as tap-to-move.
+- **Home board** always uses the default Ice theme; the board-theme setting only affects the review.
