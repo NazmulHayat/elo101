@@ -1,28 +1,58 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
   <title>Privacy · elo101</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400..800&family=Geist:wght@600..800&display=swap" rel="stylesheet">
   <style>
-    body{font:16px/1.65 system-ui,-apple-system,sans-serif;max-width:720px;margin:48px auto;padding:0 20px;color:#17221f;background:#f5f7f4}
-    h1,h2{line-height:1.2;color:#132b1c}h1{font-size:2rem}h2{font-size:1.25rem;margin-top:2rem}
-    a{color:#237348}main{background:#fff;border:1px solid #e3e9e4;border-radius:16px;padding:32px}
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: #1c1b19; color: #c9c7c4; font: 16px/1.65 "Figtree", -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+    main { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; }
+    .back { display: inline-flex; align-items: center; gap: 10px; color: #fff; font: 800 18px/1 "Geist", sans-serif; text-decoration: none; margin-bottom: 40px; }
+    .back img { width: 28px; height: 28px; }
+    h1 { margin: 0 0 6px; color: #fff; font: 700 40px/1.1 "Geist", sans-serif; letter-spacing: -.03em; }
+    .updated { margin: 0 0 32px; color: #9a9894; font-size: 14px; }
+    h2 { margin: 40px 0 10px; color: #fff; font: 700 20px/1.3 "Geist", sans-serif; letter-spacing: -.01em; }
+    p, li { margin: 0 0 12px; }
+    ul { padding-left: 20px; margin: 0 0 12px; }
+    strong { color: #fff; }
+    a { color: #5299ff; text-underline-offset: 3px; }
+    ::selection { background: rgba(59, 140, 255, .35); }
   </style>
 </head>
 <body><main>
-  <p><a href="/">← elo101</a></p>
+  <a class="back" href="/"><img src="/favicon.svg" alt="">elo101</a>
   <h1>Privacy</h1>
-  <p>Last updated November 19, 2026.</p>
-  <p>The elo101 Chrome extension helps you open a completed Chess.com or Lichess game in the elo101 review website. The review engine and rating models run in your browser. We do not require an account or sell your data.</p>
-  <h2>What the extension uses</h2>
-  <p>On Chess.com and Lichess pages, the extension displays a small Elo101 button. It checks the current page URL to identify a supported game. On Chess.com, clicking the button may also read a player name from links on the page to find the game in public archives. The extension popup checks the current tab only when you open it. Choosing a review opens elo101 with the game URL and, if found, that player name in the destination URL. The extension does not send your browsing history to elo101 or monitor other sites.</p>
-  <h2>What the website uses</h2>
-  <p>To import a game, your browser requests public game data directly from Chess.com or Lichess. Stockfish analysis, move labels, and ratings are calculated locally. The site saves up to five recently reviewed games, including their PGN, plus remembered usernames and preferences in your browser’s local storage. You can remove these by clearing site data for elo101.vercel.app in Chrome settings.</p>
-  <p>The destination URL is sent to our hosting provider, Vercel, when the page opens. The site removes the game and player parameters from the visible URL after reading them. Normal website requests may also send technical data such as your IP address to Vercel. Google Fonts is used to load the site’s typefaces.</p>
-  <p>The website uses Vercel Web Analytics to count visits and page views. It sends the page path without URL parameters or fragments, so game links and player names in handoff URLs are not included in analytics events. We do not send PGN, moves, analysis, or custom interaction events to analytics. Vercel Web Analytics uses aggregated data without third-party cookies. The extension does not include analytics, and we do not use advertising.</p>
+  <p class="updated">Last updated November 19, 2026.</p>
+
+  <p>elo101 is a free chess game review. Stockfish and the review models run in your browser. There is no account, we don't show ads, and we don't sell your data.</p>
+
+  <h2>The Chrome extension</h2>
+  <p>On Chess.com and Lichess the extension shows a small Elo101 button. It reads the current page's address to recognise a supported game. On Chess.com, clicking the button or opening the popup may also read a player name from links on the game page, so elo101 can find that game in Chess.com's public archives. When you choose to review a game, it opens elo101 with the game link and, if found, that player name in the address.</p>
+  <p>After one of your own games ends, the extension can show a short bubble offering a review. To know a game has ended it checks only whether the clocks are running, your own resign or abort buttons, and the result text. It never reads the board or the moves, and shows nothing while your game is in progress. You can turn the bubbles off in the extension popup.</p>
+  <p>The extension stores, on your device only: whether bubbles are on, the results (win, loss or draw) of your last few games for the losing-streak message, and which message it showed last. It does not send data to us or anyone else, does not include analytics, and does not run on other sites.</p>
+
+  <h2>The website</h2>
+  <p>To import a game, your browser requests public game data directly from Chess.com or Lichess. Analysis, move labels and ratings are calculated in your browser. The site keeps up to five recently reviewed games (including their PGN), remembered usernames and your settings in your browser's local storage. You can remove them by clearing site data for elo101.vercel.app in your browser settings.</p>
+  <p>The site is hosted on Vercel, so opening it sends normal request data such as your IP address to Vercel. Fonts load from Google Fonts. When elo101 opens from the extension, the game link and player name are read from the address and then removed from it.</p>
+
+  <h2>Analytics</h2>
+  <p>We use two analytics tools to understand how the site is used and to fix problems:</p>
+  <ul>
+    <li><strong>Vercel Web Analytics</strong> counts visits and page views using aggregated data and no cookies.</li>
+    <li><strong>PostHog</strong> records page views, clicks, errors and a few product events (for example that an analysis started or finished, how long it took, how many moves the game had, or that a review or Retry was opened). It may also record anonymous session replays of how the page is used; text you type into fields is masked and not recorded. PostHog keeps an anonymous ID in your browser's local storage, not in a cookie. We remove the query part of every page address before it is sent, so game links and player names from the extension are not included.</li>
+  </ul>
+  <p>We don't send your PGN or the engine's analysis as analytics data, and we don't use analytics for advertising or to identify you.</p>
+
   <h2>Limited use</h2>
-  <p>Information accessed through Chrome permissions is used only to provide the game review handoff. We do not use or transfer it for advertising, profiling, or unrelated purposes. Our use of information received from Chrome APIs follows the Chrome Web Store User Data Policy, including its Limited Use requirements.</p>
+  <p>Information accessed through Chrome extension permissions is used only to open your game in elo101 and to show the post-game bubble. We do not use or transfer it for advertising, profiling or unrelated purposes. Our use of information received from Chrome APIs follows the Chrome Web Store User Data Policy, including its Limited Use requirements.</p>
+
   <h2>Contact</h2>
   <p>For privacy questions, email <a href="mailto:nazmulhayat588@gmail.com">nazmulhayat588@gmail.com</a>.</p>
 </main></body>

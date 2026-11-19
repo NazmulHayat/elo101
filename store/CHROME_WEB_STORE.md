@@ -35,7 +35,7 @@ Permission justifications:
 - Chess.com and Lichess page access: Display the Elo101 launch button and post-game bubble on those sites, notice when the user's own game has ended (clock and result text only, never the board or moves), and identify the current game link when the button is clicked.
 - storage: Remember the "Pop up after games" setting, the last few game results (win/loss/draw only, for a losing-streak message) and which message was shown last, on this device only.
 
-Data handling: The extension reads the current game URL and, for Chess.com, may read a player name from page links. When the user selects Review game, it opens elo101.vercel.app with those values in the URL. The app fetches public game data directly from Chess.com or Lichess, analyzes it locally, and saves recent PGNs and preferences in the browser's local storage. No advertising or analytics are used.
+Data handling: The extension reads the current game URL and, for Chess.com, may read a player name from page links. When the user selects Review game, it opens elo101.vercel.app with those values in the URL. The app fetches public game data directly from Chess.com or Lichess, analyzes it locally, and saves recent PGNs and preferences in the browser's local storage. The extension includes no analytics or advertising. The website uses Vercel Web Analytics and PostHog (page views, clicks, errors, product events and masked session replays, with URL query strings removed), as described in the privacy policy.
 
 The extension does not collect credentials, payment data, or browsing history, and does not sell user data.
 
