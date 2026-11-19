@@ -14,7 +14,7 @@ import { HelpMenu } from './components/HelpMenu'
 import { InfoTip } from './components/InfoTip'
 import { ReviewTour } from './components/ReviewTour'
 import { MODE_HELP } from './lib/help'
-import { Welcome } from './components/Welcome'
+import { Home } from './components/Home'
 import { rememberGame } from './lib/recent'
 import { useAvatar } from './lib/avatar'
 import { endBadges } from './lib/ending'
@@ -556,6 +556,163 @@ export default function App() {
   const coachEval = inReview && move && !retry && !activeVariation ? engineScore(review.positions[ply]).replace(/^-/, '−') : null
   const leaveReview = () => { setRetry(null); setPlaying(false); setActiveVariationId(null); setStage('summary') }
 
+  const welcome = stage === 'import' || stage === 'analyzing'
+  const panel = (
+    <aside className={`panel panel-${stage}`}>
+      {stage === 'import' && (
+        <>
+          <div className="panel-head"><h2 className="panel-title">Review a game</h2></div>
+          {error && (
+            <div className="error banner" role="alert">
+              <span>{error}</span>
+              {handoffLink && <span>Check the game link and Chess.com username below, or choose PGN.</span>}
+              {lastPgn && (
+                <button type="button" className="link-btn" onClick={() => { track('analysis_retried'); analyze(lastPgn.pgn, lastPgn.side) }}>Try again</button>
+              )}
+            </div>
+          )}
+          <ImportPanel onAnalyze={analyze} handoff={handoffLink ?? undefined} />
+        </>
+      )}
+
+      {stage === 'analyzing' && (
+        <div className="panel-body analyzing">
+          <div className="spinner" aria-hidden />
+          <div className="an-title">Analyzing game…</div>
+          <div className="progress" role="progressbar" aria-label="Game analysis" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.total ? Math.round(progress.done / progress.total * 100) : undefined}>
+            <div style={{ width: progress.total ? `${(progress.done / progress.total) * 100}%` : '4%' }} />
+          </div>
+          <div className="analysis-status" role="status">
+            <strong>{progress.total ? `${Math.round(progress.done / progress.total * 100)}%` : 'Starting Stockfish…'}</strong>
+            {progress.total > 1 && <span>Analyzing move {Math.max(1, progress.done - 1)} of {progress.total - 1}</span>}
+            <span className="muted">{progress.done > 1 && progress.elapsed > 0
+              ? (() => { const seconds = Math.max(1, Math.ceil((progress.total - progress.done) * progress.elapsed / progress.done)); return seconds < 60 ? `About ${seconds} sec left` : `About ${Math.ceil(seconds / 60)} min left` })()
+              : 'Estimating time remaining…'}</span>
+          </div>
+          <button type="button" className="btn" onClick={() => { handoffToken.current++; abort.current?.abort(); setStage('import') }}>
+            Cancel
+          </button>
+          <div className="skeleton-block" aria-hidden>
+            <div className="sk sk-graph" />
+            <div className="sk-row"><div className="sk sk-acc" /><div className="sk sk-acc" /></div>
+            {Array.from({ length: 5 }, (_, i) => <div key={i} className="sk sk-line" />)}
+          </div>
+        </div>
+      )}
+
+      {stage === 'summary' && review && (
+        <Summary
+          review={review}
+          coach={summaryCoach(review)}
+          graphValues={graphValues}
+          mode={mode}
+          onStart={() => { track('review_opened', { via: 'start' }); setStage('review'); go(Math.max(ply, 1)) }}
+          onJump={(p) => { track('review_opened', { via: 'turning_point' }); setStage('review'); go(p) }}
+          avatars={{ white: whiteAvatar, black: blackAvatar }}
+          onPractice={(p) => { setStage('review'); startRetry(p) }}
+        />
+      )}
+
+      {inReview && (
+        <div className="panel-body review" data-testid="review-page">
+          <div className="panel-head">
+            <button type="button" className="icon-btn icon-btn-ghost back-btn" data-testid="back-to-summary" aria-label="Back to summary" title="Back to summary" onClick={leaveReview}>
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+            <h2 className="panel-title">Game review</h2>
+            {evaluationFen && <span className="panel-sub">Engine · practice line</span>}
+            <button type="button" className="icon-btn icon-btn-ghost flip-btn" data-testid="flip-board" onClick={flip} aria-label="Flip board" title="Flip board (F)">
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden><path d="M5 2.5v11M5 13.5 2.5 11M5 13.5 7.5 11M11 13.5v-11M11 2.5 8.5 5M11 2.5 13.5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </button>
+          </div>
+          {activeVariation ? (
+            <div className="variation-panel">
+              <h2>Your line <span className="variation-position">{activeVariation.cursor} / {activeVariation.moves.length}</span></h2>
+              <p>{activeVariation.explanation}</p>
+              {activeVariation.moves[activeVariation.cursor] && <div className="variation-next">Arrow: {activeVariation.moves[activeVariation.cursor].san} is next in the analyzed line. Tap a move below or move a piece to explore.</div>}
+              <div className="coach-actions">
+                {retry && <button type="button" className="btn btn-sm" onClick={() => { setActiveVariationId(null); setRetry((cur) => cur && review ? { ...cur, phase: 'try', fen: review.moves[cur.ply - 1].fen_before, tries: cur.phase === 'wrong' ? cur.tries : 0, result: undefined, attempt: undefined, attemptFen: undefined } : cur) }}>Back to puzzle</button>}
+                <button type="button" className="btn btn-sm" onClick={() => go(activeVariation.anchorPly)}>Original move</button>
+                <button type="button" className="btn btn-sm" onClick={() => go(activeVariation.anchorPly + 1)}>Continue game</button>
+              </div>
+            </div>
+          ) : retry && move ? (
+            <Coach text={retryCoach(move, retry)} label={retry.phase === 'correct' ? retry.result?.label : undefined}>
+              {retry.phase === 'try' && (
+                <button type="button" className="btn btn-sm" onClick={() => setRetry(null)}>Return to game</button>
+              )}
+              {retry.result && <button type="button" className="btn btn-sm" onClick={openAttemptLine}>Show why · play line</button>}
+              {retry.phase === 'wrong' && <button type="button" className="btn btn-sm" onClick={() => setRetry({ ...retry, phase: 'solution' })}>Show solution</button>}
+              {(retry.phase === 'correct' || retry.phase === 'solution') && (
+                <>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => go(ply + 1)}>Continue original game</button>
+                  {mistakes.some((p) => p !== ply) && (
+                    <button type="button" className="btn btn-sm" onClick={nextMistake}>Next mistake</button>
+                  )}
+                </>
+              )}
+            </Coach>
+          ) : (
+            <Coach text={move ? moveCoach(review, move) : startCoach(review)} label={move?.ep_label} evalText={coachEval} ai={move ? notes[move.ply] ?? null : null}>
+              {showingBest && <span className="best-position-note">Board shows the position before {move?.san}.</span>}
+              {explainOn && review.review_id && move && move.ep_label !== 'book' && !notes[move.ply] && (
+                <button type="button" className="btn btn-sm" onClick={() => { track('explain_requested', { ply: move.ply }); explainPly(review.review_id as string, move.ply) }} title="Ask Claude to explain this move">
+                  Explain
+                </button>
+              )}
+            </Coach>
+          )}
+          {!activeVariation && !retry && (
+            <div className="review-actions" data-tour="retry">
+              {canRetry && (
+                <button type="button" data-testid="retry-move" className="btn btn-primary act-retry" onClick={() => startRetry(ply)} title="Retry this move">
+                  <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2v3h3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  Retry
+                </button>
+              )}
+              {canShowBest && (
+                <button type="button" data-testid="show-best" className="btn act-icon" aria-pressed={showingBest} onClick={() => setShowBest((s) => !s)}
+                  aria-label={showingBest ? 'Show the move played' : `Show the best move, ${move?.best_san ?? ''}`} title={showingBest ? 'Show played' : `Best: ${move?.best_san ?? ''}`}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.55 4.43 1.07 6.27L12 17.13 6.38 20.1l1.07-6.27L2.9 9.4l6.3-.9z" fill={showingBest ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
+                </button>
+              )}
+              {ply < total ? (
+                <button type="button" data-testid="next-move" className={`btn act-next ${canRetry ? '' : 'btn-primary'}`} onClick={() => go(ply + 1)} aria-label="Next move" title="Next (→)">
+                  <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  {!canRetry && !canShowBest && <span>Next</span>}
+                </button>
+              ) : (
+                <button type="button" data-testid="next-move" className="btn btn-primary act-next" onClick={leaveReview}>Summary</button>
+              )}
+            </div>
+          )}
+          <MoveList moves={review.moves} current={activeVariation ? -1 : ply} onSelect={go} variation={savedVariation ? { anchorPly: savedVariation.anchorPly, firstPly: savedVariation.firstPly, cursor: activeVariation ? savedVariation.cursor : -1, moves: savedVariation.moves, onSelect: openSavedVariation } : null} />
+          {!activeVariation && <div className="graph-wrap" data-tour="graph">
+            <div className="graph-tabs">
+              <div className="seg" role="tablist" aria-label="Graph and evaluation bar">
+                <button type="button" role="tab" data-testid="graph-tab-chances" aria-selected={mode === 'chances'} onClick={() => setMode('chances')} title="Expected points at these players' level">Chances</button>
+                <button type="button" role="tab" data-testid="graph-tab-engine" aria-selected={mode === 'engine'} onClick={() => setMode('engine')} title="Raw Stockfish evaluation">Engine</button>
+              </div>
+              <InfoTip label="Chances vs Engine">{MODE_HELP}</InfoTip>
+            </div>
+            <Graph values={graphValues} positions={review.positions} mode={mode} moves={review.moves} current={ply} markers={markers} onSelect={go} />
+          </div>}
+          <Controls
+            onFirst={() => activeVariation ? variationStep(0) : go(0)}
+            onPrev={() => activeVariation ? variationStep(activeVariation.cursor - 1) : go(ply - 1)}
+            onNext={() => activeVariation ? variationStep(activeVariation.cursor + 1) : go(ply + 1)}
+            onLast={() => activeVariation ? variationStep(activeVariation.moves.length) : go(total)}
+            onTogglePlay={() => setPlaying((p) => !p)}
+            playing={playing}
+            atStart={activeVariation ? activeVariation.cursor === 0 : ply === 0}
+            atEnd={activeVariation ? activeVariation.cursor === activeVariation.moves.length : ply === total}
+            retrying={!!retry || !!activeVariation}
+          />
+        </div>
+      )}
+    </aside>
+  )
+
   return (
     <div className="app">
       <header className="topbar">
@@ -574,9 +731,12 @@ export default function App() {
           <SettingsMenu settings={settings} onChange={updateSettings} />
         </nav>
       </header>
-      <main className={`layout ${stage === 'import' || stage === 'analyzing' ? 'layout-welcome' : ''}`}>
+      {welcome ? (
+        <main className="home-main"><Home theme={BOARD_THEMES[settings.theme]}>{panel}</Home></main>
+      ) : (
+      <main className="layout">
         <section className="left" ref={boardRef}>
-          {stage === 'import' || stage === 'analyzing' ? <Welcome theme={BOARD_THEMES[settings.theme]} /> : <BoardArea
+          <BoardArea
             fen={fen}
             orientation={orientation}
             white={whiteP}
@@ -591,163 +751,11 @@ export default function App() {
             evalText={evalText}
             onStep={inReview && !retry ? (direction) => (activeVariation ? variationStep(activeVariation.cursor + direction) : go(ply + direction)) : undefined}
             theme={BOARD_THEMES[settings.theme]}
-          />}
+          />
         </section>
-
-        <aside className={`panel panel-${stage}`}>
-          {stage === 'import' && (
-            <>
-              <div className="panel-head"><h2 className="panel-title">Review a game</h2></div>
-              {error && (
-                <div className="error banner" role="alert">
-                  <span>{error}</span>
-                  {handoffLink && <span>Check the game link and Chess.com username below, or choose PGN.</span>}
-                  {lastPgn && (
-                    <button type="button" className="link-btn" onClick={() => { track('analysis_retried'); analyze(lastPgn.pgn, lastPgn.side) }}>Try again</button>
-                  )}
-                </div>
-              )}
-              <ImportPanel onAnalyze={analyze} handoff={handoffLink ?? undefined} />
-            </>
-          )}
-
-          {stage === 'analyzing' && (
-            <div className="panel-body analyzing">
-              <div className="spinner" aria-hidden />
-              <div className="an-title">Analyzing game…</div>
-              <div className="progress" role="progressbar" aria-label="Game analysis" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress.total ? Math.round(progress.done / progress.total * 100) : undefined}>
-                <div style={{ width: progress.total ? `${(progress.done / progress.total) * 100}%` : '4%' }} />
-              </div>
-              <div className="analysis-status" role="status">
-                <strong>{progress.total ? `${Math.round(progress.done / progress.total * 100)}%` : 'Starting Stockfish…'}</strong>
-                {progress.total > 1 && <span>Analyzing move {Math.max(1, progress.done - 1)} of {progress.total - 1}</span>}
-                <span className="muted">{progress.done > 1 && progress.elapsed > 0
-                  ? (() => { const seconds = Math.max(1, Math.ceil((progress.total - progress.done) * progress.elapsed / progress.done)); return seconds < 60 ? `About ${seconds} sec left` : `About ${Math.ceil(seconds / 60)} min left` })()
-                  : 'Estimating time remaining…'}</span>
-              </div>
-              <button type="button" className="btn" onClick={() => { handoffToken.current++; abort.current?.abort(); setStage('import') }}>
-                Cancel
-              </button>
-              <div className="skeleton-block" aria-hidden>
-                <div className="sk sk-graph" />
-                <div className="sk-row"><div className="sk sk-acc" /><div className="sk sk-acc" /></div>
-                {Array.from({ length: 5 }, (_, i) => <div key={i} className="sk sk-line" />)}
-              </div>
-            </div>
-          )}
-
-          {stage === 'summary' && review && (
-            <Summary
-              review={review}
-              coach={summaryCoach(review)}
-              graphValues={graphValues}
-              mode={mode}
-              onStart={() => { track('review_opened', { via: 'start' }); setStage('review'); go(Math.max(ply, 1)) }}
-              onJump={(p) => { track('review_opened', { via: 'turning_point' }); setStage('review'); go(p) }}
-              avatars={{ white: whiteAvatar, black: blackAvatar }}
-              onPractice={(p) => { setStage('review'); startRetry(p) }}
-            />
-          )}
-
-          {inReview && (
-            <div className="panel-body review" data-testid="review-page">
-              <div className="panel-head">
-                <button type="button" className="icon-btn icon-btn-ghost back-btn" data-testid="back-to-summary" aria-label="Back to summary" title="Back to summary" onClick={leaveReview}>
-                  <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </button>
-                <h2 className="panel-title">Game review</h2>
-                {evaluationFen && <span className="panel-sub">Engine · practice line</span>}
-                <button type="button" className="icon-btn icon-btn-ghost flip-btn" data-testid="flip-board" onClick={flip} aria-label="Flip board" title="Flip board (F)">
-                  <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden><path d="M5 2.5v11M5 13.5 2.5 11M5 13.5 7.5 11M11 13.5v-11M11 2.5 8.5 5M11 2.5 13.5 5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </button>
-              </div>
-              {activeVariation ? (
-                <div className="variation-panel">
-                  <h2>Your line <span className="variation-position">{activeVariation.cursor} / {activeVariation.moves.length}</span></h2>
-                  <p>{activeVariation.explanation}</p>
-                  {activeVariation.moves[activeVariation.cursor] && <div className="variation-next">Arrow: {activeVariation.moves[activeVariation.cursor].san} is next in the analyzed line. Tap a move below or move a piece to explore.</div>}
-                  <div className="coach-actions">
-                    {retry && <button type="button" className="btn btn-sm" onClick={() => { setActiveVariationId(null); setRetry((cur) => cur && review ? { ...cur, phase: 'try', fen: review.moves[cur.ply - 1].fen_before, tries: cur.phase === 'wrong' ? cur.tries : 0, result: undefined, attempt: undefined, attemptFen: undefined } : cur) }}>Back to puzzle</button>}
-                    <button type="button" className="btn btn-sm" onClick={() => go(activeVariation.anchorPly)}>Original move</button>
-                    <button type="button" className="btn btn-sm" onClick={() => go(activeVariation.anchorPly + 1)}>Continue game</button>
-                  </div>
-                </div>
-              ) : retry && move ? (
-                <Coach text={retryCoach(move, retry)} label={retry.phase === 'correct' ? retry.result?.label : undefined}>
-                  {retry.phase === 'try' && (
-                    <button type="button" className="btn btn-sm" onClick={() => setRetry(null)}>Return to game</button>
-                  )}
-                  {retry.result && <button type="button" className="btn btn-sm" onClick={openAttemptLine}>Show why · play line</button>}
-                  {retry.phase === 'wrong' && <button type="button" className="btn btn-sm" onClick={() => setRetry({ ...retry, phase: 'solution' })}>Show solution</button>}
-                  {(retry.phase === 'correct' || retry.phase === 'solution') && (
-                    <>
-                      <button type="button" className="btn btn-primary btn-sm" onClick={() => go(ply + 1)}>Continue original game</button>
-                      {mistakes.some((p) => p !== ply) && (
-                        <button type="button" className="btn btn-sm" onClick={nextMistake}>Next mistake</button>
-                      )}
-                    </>
-                  )}
-                </Coach>
-              ) : (
-                <Coach text={move ? moveCoach(review, move) : startCoach(review)} label={move?.ep_label} evalText={coachEval} ai={move ? notes[move.ply] ?? null : null}>
-                  {showingBest && <span className="best-position-note">Board shows the position before {move?.san}.</span>}
-                  {explainOn && review.review_id && move && move.ep_label !== 'book' && !notes[move.ply] && (
-                    <button type="button" className="btn btn-sm" onClick={() => { track('explain_requested', { ply: move.ply }); explainPly(review.review_id as string, move.ply) }} title="Ask Claude to explain this move">
-                      Explain
-                    </button>
-                  )}
-                </Coach>
-              )}
-              {!activeVariation && !retry && (
-                <div className="review-actions" data-tour="retry">
-                  {canRetry && (
-                    <button type="button" data-testid="retry-move" className="btn btn-primary act-retry" onClick={() => startRetry(ply)} title="Retry this move">
-                      <svg width="17" height="17" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6M3 2v3h3" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      Retry
-                    </button>
-                  )}
-                  {canShowBest && (
-                    <button type="button" data-testid="show-best" className="btn act-icon" aria-pressed={showingBest} onClick={() => setShowBest((s) => !s)}
-                      aria-label={showingBest ? 'Show the move played' : `Show the best move, ${move?.best_san ?? ''}`} title={showingBest ? 'Show played' : `Best: ${move?.best_san ?? ''}`}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8l2.8 5.7 6.3.9-4.55 4.43 1.07 6.27L12 17.13 6.38 20.1l1.07-6.27L2.9 9.4l6.3-.9z" fill={showingBest ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinejoin="round" /></svg>
-                    </button>
-                  )}
-                  {ply < total ? (
-                    <button type="button" data-testid="next-move" className={`btn act-next ${canRetry ? '' : 'btn-primary'}`} onClick={() => go(ply + 1)} aria-label="Next move" title="Next (→)">
-                      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      {!canRetry && !canShowBest && <span>Next</span>}
-                    </button>
-                  ) : (
-                    <button type="button" data-testid="next-move" className="btn btn-primary act-next" onClick={leaveReview}>Summary</button>
-                  )}
-                </div>
-              )}
-              <MoveList moves={review.moves} current={activeVariation ? -1 : ply} onSelect={go} variation={savedVariation ? { anchorPly: savedVariation.anchorPly, firstPly: savedVariation.firstPly, cursor: activeVariation ? savedVariation.cursor : -1, moves: savedVariation.moves, onSelect: openSavedVariation } : null} />
-              {!activeVariation && <div className="graph-wrap" data-tour="graph">
-                <div className="graph-tabs">
-                  <div className="seg" role="tablist" aria-label="Graph and evaluation bar">
-                    <button type="button" role="tab" data-testid="graph-tab-chances" aria-selected={mode === 'chances'} onClick={() => setMode('chances')} title="Expected points at these players' level">Chances</button>
-                    <button type="button" role="tab" data-testid="graph-tab-engine" aria-selected={mode === 'engine'} onClick={() => setMode('engine')} title="Raw Stockfish evaluation">Engine</button>
-                  </div>
-                  <InfoTip label="Chances vs Engine">{MODE_HELP}</InfoTip>
-                </div>
-                <Graph values={graphValues} positions={review.positions} mode={mode} moves={review.moves} current={ply} markers={markers} onSelect={go} />
-              </div>}
-              <Controls
-                onFirst={() => activeVariation ? variationStep(0) : go(0)}
-                onPrev={() => activeVariation ? variationStep(activeVariation.cursor - 1) : go(ply - 1)}
-                onNext={() => activeVariation ? variationStep(activeVariation.cursor + 1) : go(ply + 1)}
-                onLast={() => activeVariation ? variationStep(activeVariation.moves.length) : go(total)}
-                onTogglePlay={() => setPlaying((p) => !p)}
-                playing={playing}
-                atStart={activeVariation ? activeVariation.cursor === 0 : ply === 0}
-                atEnd={activeVariation ? activeVariation.cursor === activeVariation.moves.length : ply === total}
-                retrying={!!retry || !!activeVariation}
-              />
-            </div>
-          )}
-        </aside>
+        {panel}
       </main>
+      )}
       {inReview && !retry && !practiceVisited && <ReviewTour onShowRetry={() => {
         const first = review.moves.find((m) => RETRY_LABELS.includes(m.ep_label))
         if (first) go(first.ply)

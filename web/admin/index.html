@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -9,12 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400..800&family=Geist:wght@500..800&display=swap" rel="stylesheet" />
     <meta name="theme-color" content="#1c1b19" />
-    <script>
-      let appearance = 'system'
-      try { appearance = JSON.parse(localStorage.getItem('cc.settings') || '{}').appearance || 'system' } catch { /* Use System. */ }
-      document.documentElement.dataset.theme = appearance === 'dark' || appearance === 'light'
-        ? appearance : matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-    </script>
     <title>elo101 · Analytics</title>
   </head>
   <body>

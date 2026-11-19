@@ -14,15 +14,15 @@
 
 ### [**▶ Try it: elo101.vercel.app**](https://elo101.vercel.app/)
 
-No account. Stockfish, the models and the review run in your browser; public game imports contact Chess.com or Lichess directly.
+No account. Stockfish, the models and the review run in your browser; public game imports contact Chess.com or Lichess directly. A [Chrome extension](extension/) adds a one-click "Review" button to finished Chess.com and Lichess games.
 
-<img src="docs/images/demo.gif" alt="Reviewing Morphy's Opera Game in the browser, stepping to the Brilliant queen sacrifice" width="900">
+<img src="docs/images/demo.gif" alt="An elo101 review: stepping through the sample game to the Bxd1 blunder, then retrying and finding Nxe5" width="900">
 
 </div>
 
 ## Why
 
-Stockfish says **+1.5** whoever is playing. But +1.5 for two 800s with 10 seconds left is not +1.5 for two 2200s in a rapid game.
+Stockfish gives one number whoever is playing. Before Morphy's 13.Rxd7 in the Opera Game it says **+5.2**, but the win takes a rook sacrifice and then a queen sacrifice. In a 10-minute game, elo101's Chances model gives White **93%** for two 2400s, **84%** for two 1600s and **69%** for two 800s.
 
 elo101 learns **expected points** from millions of Lichess games. The Chances view estimates the result at these players' ratings and available clocks. A separate board-focused model uses the players' ratings to judge moves Chess.com-style (Best → Blunder, plus Great, Miss and Brilliant). Accuracy uses an engine-based formula; game rating follows that accuracy.
 
@@ -41,28 +41,24 @@ elo101 learns **expected points** from millions of Lichess games. The Chances vi
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/review.png" alt="Review: 16. Qb8+ labelled Brilliant"></td>
-    <td width="50%"><img src="docs/images/summary.png" alt="Summary: accuracy, game rating, label counts"></td>
+    <td width="50%"><img src="docs/images/home.png" alt="Home: import from Chess.com, Lichess, a game link or PGN, with a recording of a review"></td>
+    <td width="50%"><img src="docs/images/review.png" alt="Review: Bxd1 is a blunder, Nxe5 was best"></td>
   </tr>
   <tr>
-    <td align="center"><b>Review</b>: Morphy's 16. Qb8+!! (1858)</td>
-    <td align="center"><b>Summary</b>: accuracy and game rating</td>
+    <td align="center"><b>Home</b>: Chess.com, Lichess, game link or PGN</td>
+    <td align="center"><b>Review</b>: every move labelled and explained</td>
   </tr>
   <tr>
-    <td><img src="docs/images/retry.png" alt="Retry mode"></td>
-    <td><img src="docs/images/light.png" alt="Light theme"></td>
+    <td><img src="docs/images/summary.png" alt="Summary: chances graph, accuracy, label counts"></td>
+    <td><img src="docs/images/retry.png" alt="Retry mode: Nxe5 is correct"></td>
   </tr>
   <tr>
+    <td align="center"><b>Summary</b>: chances graph, accuracy, labels</td>
     <td align="center"><b>Retry</b> your mistakes on the board</td>
-    <td align="center"><b>Light theme</b>, board colours, sounds</td>
   </tr>
 </table>
 
-<p align="center">
-  <img src="docs/images/mobile.png" alt="Phone layout" width="250">
-  &nbsp;&nbsp;
-  <img src="docs/images/import.png" alt="Import from Chess.com, Lichess or PGN" width="560">
-</p>
+<p align="center"><img src="docs/images/mobile.png" alt="Phone layout" width="260"></p>
 
 ## Results
 
@@ -152,7 +148,7 @@ All 28 problems, with before/after numbers: [engineering log](docs/engineering-l
 |---|---|
 | ML & data | Python, LightGBM, PyTorch, pandas, Parquet, zstandard, multiprocessing |
 | Chess | Stockfish 18 (native + WebAssembly), python-chess, chess.js |
-| App | React 19, TypeScript, Vite, Web Workers, Vercel |
+| App | React 19, TypeScript, Vite, Web Workers, Vercel, Chrome extension (Manifest V3) |
 | Quality | pytest, Vitest (with Python parity), ESLint, GitHub Actions |
 
 ## Run it
@@ -182,6 +178,7 @@ ep_model/           Python: data pipeline, models, reference review
   review/           move labels, accuracy, game rating, optional server
   benchmark/        frozen benchmark sets and scorer
 web/                React + TypeScript app (fully client-side)
+extension/          Chrome extension: review button on Chess.com and Lichess
   src/review/       TypeScript port of the review + parity tests
   src/engine/       Stockfish WASM worker pool
 tests/              pytest suite
@@ -194,4 +191,4 @@ docs/               methodology, benchmark, engineering log
 
 ## License
 
-[MIT](LICENSE). Data: [Lichess open database](https://database.lichess.org/) (CC0). Engine: [Stockfish](https://stockfishchess.org/) (GPLv3, run as a separate program). Sounds: Lichess "standard" set (not MIT; see [web/public/sounds](web/public/sounds/README.md)). Board: the Ice marble texture (`web/public/boards/ice.jpg`) is derived from Lichess's `blue-marble.jpg`, recoloured (AGPLv3+, [lichess-org/lila](https://github.com/lichess-org/lila)). Fonts: Geist and Noto Sans Symbols 2 (SIL Open Font License), loaded from Google Fonts. Not affiliated with Chess.com or Lichess.
+[MIT](LICENSE). Data: [Lichess open database](https://database.lichess.org/) (CC0). Engine: [Stockfish](https://stockfishchess.org/) (GPLv3, run as a separate program). Sounds: Lichess "standard" set (not MIT; see [web/public/sounds](web/public/sounds/README.md)). Board: the Ice marble texture (`web/public/boards/ice.jpg`) is derived from Lichess's `blue-marble.jpg`, recoloured (AGPLv3+, [lichess-org/lila](https://github.com/lichess-org/lila)). Fonts: Figtree, Geist and Noto Sans Symbols 2 (SIL Open Font License), loaded from Google Fonts. Not affiliated with Chess.com or Lichess.

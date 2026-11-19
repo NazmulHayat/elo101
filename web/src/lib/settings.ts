@@ -1,7 +1,6 @@
 // Per-browser preferences (board theme, sounds), kept in localStorage when available.
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 
-export type Appearance = 'system' | 'light' | 'dark'
 export type BoardTheme = 'ice' | 'green' | 'walnut' | 'slate' | 'frost'
 
 export interface BoardThemeSpec {
@@ -30,11 +29,10 @@ export interface Settings {
   theme: BoardTheme
   sounds: boolean
   volume: number
-  appearance: Appearance
 }
 
 const KEY = 'cc.settings'
-const DEFAULTS: Settings = { theme: 'ice', sounds: true, volume: 70, appearance: 'system' }
+const DEFAULTS: Settings = { theme: 'ice', sounds: true, volume: 70 }
 
 /** Saved settings JSON → valid settings; unknown or old values fall back safely. */
 export function parseSettings(raw: string | null): Settings {
@@ -43,7 +41,6 @@ export function parseSettings(raw: string | null): Settings {
     return {
       theme: Object.prototype.hasOwnProperty.call(BOARD_THEMES, s.theme) ? s.theme
         : Object.prototype.hasOwnProperty.call(LEGACY_THEMES, s.theme) ? LEGACY_THEMES[s.theme] : DEFAULTS.theme,
-      appearance: s.appearance === 'light' || s.appearance === 'dark' ? s.appearance : 'system',
       sounds: typeof s.sounds === 'boolean' ? s.sounds : DEFAULTS.sounds,
       volume: typeof s.volume === 'number' && Number.isFinite(s.volume) ? Math.min(100, Math.max(0, s.volume)) : DEFAULTS.volume,
     }
@@ -62,17 +59,6 @@ function load(): Settings {
 
 export function useSettings(): [Settings, (patch: Partial<Settings>) => void] {
   const [settings, setSettings] = useState<Settings>(load)
-  useEffect(() => {
-    const query = window.matchMedia('(prefers-color-scheme: light)')
-    const apply = () => {
-      document.documentElement.dataset.theme = settings.appearance === 'system' ? (query.matches ? 'light' : 'dark') : settings.appearance
-      const color = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color)
-    }
-    apply()
-    query.addEventListener('change', apply)
-    return () => query.removeEventListener('change', apply)
-  }, [settings.appearance])
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((cur) => {
       const next = { ...cur, ...patch }

@@ -23,24 +23,6 @@ colors:
   clock-active-dark: "#ffffff / #1c1b19"
   tab-track-dark: "#1f1e1b"
   tab-on-dark: "#3a3835"
-  page-light: "#eeedeb"
-  topbar-light: "#ffffff"
-  panel-light: "#ffffff"
-  well-light: "#f3f2f0"
-  row-light: "#f6f5f3"
-  field-light: "#ffffff"
-  line-light: "rgba(0,0,0,.08)"
-  ink-light: "#1c1b19"
-  ink-2-light: "#4b4946"
-  plain-move-light: "#312e2b"
-  muted-light: "#86837f"
-  button-light: "#efeeec"
-  button-highlight-light: "rgba(255,255,255,.8)"
-  current-move-light: "#e3e1dd"
-  clock-idle-light: "#e3e1dd / #86837f"
-  clock-active-light: "#1c1b19 / #ffffff"
-  tab-track-light: "#f0eeeb"
-  tab-on-light: "#ffffff"
   graph-black: "#403d39"
   graph-white: "#f4f3f1"
   eval-black: "#403d39"
@@ -103,9 +85,9 @@ spacing:
 
 ## Overview
 
-"Classic, made ours." The review keeps the layout and label language Chess.com players already read without thinking (board left, panel right, Brilliant → Blunder), and makes everything else elo101's own: an ice-marble board, warm-neutral surfaces, ice blue for every action, and squircle move badges in elo101's palette. Dark is the default; light mirrors it token for token; System follows the OS.
+"Classic, made ours." The review keeps the layout and label language Chess.com players already read without thinking (board left, panel right, Brilliant → Blunder), and makes everything else elo101's own: an ice-marble board, warm-neutral surfaces, ice blue for every action, and squircle move badges in elo101's palette. The site is dark only (light mode was removed on 2026-11-19).
 
-Source of truth for values: `web/src/index.css` (tokens on `:root` and `:root[data-theme="light"]`), `web/src/labels.ts` (label colours), `web/src/lib/settings.ts` (board themes).
+Source of truth for values: `web/src/index.css` (tokens on `:root`), `web/src/labels.ts` (label colours), `web/src/lib/settings.ts` (board themes).
 
 ## Colour
 

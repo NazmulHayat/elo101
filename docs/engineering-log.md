@@ -161,3 +161,11 @@ What was built, the numbers behind it, and the problems solved along the way. Ne
 - **Fair play:** game state is read only from clocks ticking, the player's own resign/abort buttons and the result text. No board, move or position reading; nothing at all is shown while your own game is in progress (the pill and greeting were removed after re-reading Chess.com's Fair Play Policy, which bans extensions that analyse positions or blunder-check games in progress). Spectated games never trigger a bubble.
 - **Robustness:** if the result screen's markup changes, "clocks stopped + player buttons gone for 3 s" still counts as game over and a neutral line is shown.
 - **Fixes on the way:** Chess.com review/analysis sub-pages (`/analysis/game/live/<id>/analysis`) were not recognised as games; eight-letter Lichess pages (`/analysis`, `/training`, …) were mistaken for game ids.
+
+
+## Home page and dark only (2026-11-19)
+
+- **Why:** the old start screen was a headline, a static board and a paragraph of method text; it didn't show what a review looks like or what makes elo101 different.
+- **What:** `web/src/components/Home.tsx` replaces `Welcome.tsx`. Hero with the real import panel (the analyzing panel takes its place while a game is analysed), a 22 s recording of a real review that ends on a solved Retry, a Chances section, a turning-point graph, two real screenshots, and a closing call to action. Mocked and iterated in `.lavish/home-redesign.html` first.
+- **Numbers on the page are real:** the Chances example is Morphy's Opera Game before 13.Rxd7 (Stockfish +5.2); the shipped Chances model gives White 93% for two 2400s, 84% for two 1600s and 69% for two 800s in a 10-minute game. The graph is the full Opera Game reviewed at 1500 vs 1500 (34 positions, 10 labelled moves). Recording and screenshots were captured from the running app with Chrome's screencast.
+- **Dark only:** the Appearance setting, the light tokens and the pre-paint theme scripts were removed from the app and the admin page.

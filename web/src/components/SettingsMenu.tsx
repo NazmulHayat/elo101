@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { BOARD_THEMES, type Appearance, type BoardTheme, type Settings } from '../lib/settings'
+import { BOARD_THEMES, type BoardTheme, type Settings } from '../lib/settings'
 
 export function SettingsMenu({ settings, onChange }: { settings: Settings; onChange: (patch: Partial<Settings>) => void }) {
   const [open, setOpen] = useState(false)
@@ -28,11 +28,6 @@ export function SettingsMenu({ settings, onChange }: { settings: Settings; onCha
       </button>
       {open && (
         <div className="settings-pop" role="dialog" aria-label="Settings">
-          <label className="settings-label">Appearance
-            <select className="field" data-testid="appearance-select" value={settings.appearance} onChange={(e) => onChange({ appearance: e.target.value as Appearance })}>
-              <option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option>
-            </select>
-          </label>
           <div className="section-title">Board</div>
           <div className="theme-list">
             {(Object.keys(BOARD_THEMES) as BoardTheme[]).map((t) => (
