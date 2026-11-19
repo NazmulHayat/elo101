@@ -7,7 +7,7 @@ import { ACCURACY_HELP, RATING_HELP } from '../lib/help'
 import { InfoTip } from './InfoTip'
 import { Graph } from './Graph'
 import { LabelIcon } from './LabelIcon'
-import { KingIcon } from './PieceIcon'
+import { PlayerAvatar } from './PlayerAvatar'
 
 interface Props {
   review: Review
@@ -17,6 +17,7 @@ interface Props {
   onStart: () => void
   onJump: (ply: number) => void
   onPractice: (ply: number) => void
+  avatars?: { white: string | null; black: string | null }
 }
 
 const PHASES: [Phase, string][] = [['opening', 'Opening'], ['middlegame', 'Middlegame'], ['endgame', 'Endgame']]
@@ -32,11 +33,11 @@ function Grade({ g }: { g: PhaseGrade | null }) {
 
 function Rating({ est, rating }: { est: Review['summary']['white']['estimated_rating']; rating: number }) {
   // "Played like": the rating of players who typically play this well, as Chess.com's game rating does.
-  if (!est) return <span className="sum-rating">–<small>too few moves</small></span>
-  return <span className="sum-rating" title={`Played like a ${est.plays_like}. Rating: ${rating}.`}>{est.plays_like}<small>played like</small></span>
+  if (!est) return <span className="sum-rating sum-rating-none">–<small>too few moves</small></span>
+  return <span className="sum-rating" title={`Played like a ${est.plays_like}. Rating: ${rating}.`}><b>{est.plays_like}</b></span>
 }
 
-export function Summary({ review, coach, graphValues, mode, onStart, onJump, onPractice }: Props) {
+export function Summary({ review, coach, graphValues, mode, onStart, onJump, onPractice, avatars }: Props) {
   const { white: ws, black: bs } = review.summary
   const white = review.headers.White || 'White'
   const black = review.headers.Black || 'Black'
@@ -67,9 +68,9 @@ export function Summary({ review, coach, graphValues, mode, onStart, onJump, onP
           </div>
           <div className="sum-row" role="row">
             <span className="sum-lbl" role="rowheader">Players</span>
-            <span className="sum-av" role="cell"><span className={winner === 'white' ? 'win' : ''} aria-label={winner === 'white' ? `${white}, winner` : white} role="img"><KingIcon side="white" size={46} /></span></span>
+            <span className="sum-av" role="cell"><span className={winner === 'white' ? 'win' : ''} aria-label={winner === 'white' ? `${white}, winner` : white} role="img"><PlayerAvatar side="white" src={avatars?.white ?? null} size={46} /></span></span>
             <span aria-hidden />
-            <span className="sum-av" role="cell"><span className={winner === 'black' ? 'win' : ''} aria-label={winner === 'black' ? `${black}, winner` : black} role="img"><KingIcon side="black" size={46} /></span></span>
+            <span className="sum-av" role="cell"><span className={winner === 'black' ? 'win' : ''} aria-label={winner === 'black' ? `${black}, winner` : black} role="img"><PlayerAvatar side="black" src={avatars?.black ?? null} size={46} /></span></span>
           </div>
           <div className="sum-row" role="row">
             <span className="sum-lbl" role="rowheader">Accuracy <InfoTip label="Accuracy">{ACCURACY_HELP}</InfoTip></span>
@@ -79,9 +80,9 @@ export function Summary({ review, coach, graphValues, mode, onStart, onJump, onP
           </div>
           <div className="sum-row" role="row">
             <span className="sum-lbl" role="rowheader">Game rating <InfoTip label="Game rating">{RATING_HELP}</InfoTip></span>
-            <span role="cell"><Rating est={ws.estimated_rating} rating={review.white_elo} /></span>
+            <span role="cell" className="sum-rating-white"><Rating est={ws.estimated_rating} rating={review.white_elo} /></span>
             <span aria-hidden />
-            <span role="cell"><Rating est={bs.estimated_rating} rating={review.black_elo} /></span>
+            <span role="cell" className="sum-rating-black"><Rating est={bs.estimated_rating} rating={review.black_elo} /></span>
           </div>
           <div className="sum-rule" aria-hidden />
           {LABEL_ORDER.map((l) => {
@@ -99,19 +100,8 @@ export function Summary({ review, coach, graphValues, mode, onStart, onJump, onP
           })}
         </div>
 
-        <div className="start-review-wrap">
-          <button type="button" className="btn btn-primary btn-start" data-testid="start-review" onClick={onStart}>Start review</button>
-        </div>
-
-        <section className="sum-section" aria-label="Overview">
-          <div className="sum-card">
-            <strong>{coach.title}</strong>
-            <p>{coach.body}</p>
-          </div>
-        </section>
-
         <section className="sum-section" aria-label="Phases">
-          <h3 className="sum-h">Phases <InfoTip label="Phases">Each grade summarizes move accuracy during the opening, middlegame or endgame. The number is that phase’s accuracy; a dash means there were no moves to grade.</InfoTip></h3>
+          <h3 className="sum-h">Phases</h3>
           <div className="phase-grid">
             {PHASES.map(([ph, name]) => (
               <div className="phase-row" key={ph}>
@@ -120,6 +110,13 @@ export function Summary({ review, coach, graphValues, mode, onStart, onJump, onP
                 <Grade g={bs.phases?.[ph] ?? null} />
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="sum-section" aria-label="Overview">
+          <div className="sum-card">
+            <strong>{coach.title}</strong>
+            <p>{coach.body}</p>
           </div>
         </section>
 
@@ -163,6 +160,9 @@ export function Summary({ review, coach, graphValues, mode, onStart, onJump, onP
           {(!review.headers.WhiteElo || !review.headers.BlackElo) && ' Missing player ratings were estimated as 1500.'}
           {review.moves.every((m) => m.clock_sec === null) && ' No per-move clocks were available for this game.'}
         </p>
+      </div>
+      <div className="start-review-wrap">
+        <button type="button" className="btn btn-primary btn-start" data-testid="start-review" onClick={onStart}>Start review</button>
       </div>
     </div>
   )

@@ -72,7 +72,7 @@ export function MoveList({ moves, current, onSelect, variation }: Props) {
             {cell(w)}
             {cell(b)}
           </div>
-          {variation && (w.ply === variation.anchorPly || b?.ply === variation.anchorPly) && (
+          {variation && (w.ply === variation.anchorPly || b?.ply === variation.anchorPly || (variation.anchorPly === 0 && w.ply === 1)) && (
             <div className="branch-row" aria-label="Explored line">
               <span className="branch-rule" aria-hidden="true" />
               <span className="branch-label">Your line</span>

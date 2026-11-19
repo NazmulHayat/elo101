@@ -8,13 +8,17 @@ import { capturedFrom, type Captured, type PieceType } from '../lib/material'
 import type { Label, Side } from '../types'
 import type { BoardThemeSpec } from '../lib/settings'
 import { LabelIcon } from './LabelIcon'
-import { KingIcon } from './PieceIcon'
+import type { EndBadge } from '../lib/ending'
+
+const NO_ENDS: EndBadge[] = []
+import { PlayerAvatar } from './PlayerAvatar'
 
 export interface PlayerInfo {
   name: string
   elo: number | null
   side: Side
   clock: string | null
+  avatar?: string | null
 }
 
 interface Badge {
@@ -25,14 +29,16 @@ interface Badge {
 interface SquareInfo {
   badge: Badge | null
   orientation: Side
+  ends: EndBadge[]
 }
 
 // The square renderer must be a stable component, so the current badge and orientation reach it via context.
-const SquareContext = createContext<SquareInfo>({ badge: null, orientation: 'white' })
+const SquareContext = createContext<SquareInfo>({ badge: null, orientation: 'white', ends: [] })
 
 /** A square with its coordinates printed inside (rank on the left file, file on the bottom rank) and the move badge. */
 const BoardSquare = forwardRef<HTMLDivElement, CustomSquareProps>(function BoardSquare({ children, square, squareColor, style }, ref) {
-  const { badge, orientation } = useContext(SquareContext)
+  const { badge, orientation, ends } = useContext(SquareContext)
+  const end = ends.find((e) => e.square === square)
   const onLight = squareColor === 'white'
   const leftFile = orientation === 'white' ? 'a' : 'h'
   const bottomRank = orientation === 'white' ? '1' : '8'
@@ -41,6 +47,7 @@ const BoardSquare = forwardRef<HTMLDivElement, CustomSquareProps>(function Board
       {children}
       {square[0] === leftFile && <span className={`coord coord-rank ${onLight ? 'on-light' : 'on-dark'}`} aria-hidden>{square[1]}</span>}
       {square[1] === bottomRank && <span className={`coord coord-file ${onLight ? 'on-light' : 'on-dark'}`} aria-hidden>{square[0]}</span>}
+      {end && <span className={`end-badge end-${end.tone}`}>{end.text}</span>}
       {badge && badge.square === square && (
         <span className="square-badge" key={`${badge.square}-${badge.label}`}>
           <LabelIcon label={badge.label} size={26} />
@@ -53,12 +60,13 @@ const BoardSquare = forwardRef<HTMLDivElement, CustomSquareProps>(function Board
 type BoardProps = Omit<ComponentProps<typeof Chessboard>, 'customSquare' | 'customDarkSquareStyle' | 'customLightSquareStyle' | 'customBoardStyle' | 'showBoardNotation'> & {
   theme: BoardThemeSpec
   badge?: Badge | null
+  ends?: EndBadge[]
 }
 
 /** react-chessboard in an elo101 board theme: one picture (Ice marble) or flat squares, coordinates inside the corner squares. */
-export function ThemedBoard({ theme, badge = null, boardOrientation = 'white', ...rest }: BoardProps) {
+export function ThemedBoard({ theme, badge = null, ends = NO_ENDS, boardOrientation = 'white', ...rest }: BoardProps) {
   const square = theme.image ? { backgroundColor: 'transparent' } : null
-  const info = useMemo(() => ({ badge, orientation: boardOrientation }), [badge, boardOrientation])
+  const info = useMemo(() => ({ badge, orientation: boardOrientation, ends }), [badge, boardOrientation, ends])
   return (
     <div
       className="themed-board"
@@ -110,7 +118,7 @@ function CapturedPieces({ side, cap }: { side: Side; cap: Captured }) {
 function PlayerBar({ p, cap, toMove }: { p: PlayerInfo; cap: Captured; toMove: boolean }) {
   return (
     <div className="player-bar">
-      <span className="avatar" aria-label={p.side === 'white' ? 'White' : 'Black'} role="img"><KingIcon side={p.side} /></span>
+      <span className="avatar" aria-label={p.side === 'white' ? 'White' : 'Black'} role="img"><PlayerAvatar side={p.side} src={p.avatar ?? null} /></span>
       <div className="player-id">
         <div className="player-line">
           <span className="player-name">{p.name}</span>
@@ -142,6 +150,7 @@ interface Props {
   black: PlayerInfo
   lastMove: { from: string; to: string } | null
   badge: Badge | null
+  ends?: EndBadge[]
   arrow: { from: string; to: string; color?: string } | null
   whiteShare: number
   evalText: string
@@ -149,22 +158,51 @@ interface Props {
   onStep?: (direction: -1 | 1) => void
 }
 
-export function BoardArea({ fen, input, inputSession, orientation, white, black, lastMove, badge, arrow, whiteShare, evalText, theme, onStep }: Props) {
+export function BoardArea({ fen, input, inputSession, orientation, white, black, lastMove, badge, ends, arrow, whiteShare, evalText, theme, onStep }: Props) {
   const swipe = useRef<{ id: number; x: number; y: number; time: number } | null>(null)
+  // Scrolling over the board steps through moves (down = forward, up = back), one step per notch.
+  const boardRef = useRef<HTMLDivElement>(null)
+  const stepRef = useRef(onStep)
+  stepRef.current = onStep
+  useEffect(() => {
+    const el = boardRef.current
+    if (!el) return
+    let acc = 0
+    let last = 0
+    const onWheel = (e: WheelEvent) => {
+      const step = stepRef.current
+      if (!step || e.ctrlKey || Math.abs(e.deltaY) < Math.abs(e.deltaX)) return
+      e.preventDefault()
+      const now = performance.now()
+      if (now - last > 250) acc = 0
+      last = now
+      acc += e.deltaMode === 1 ? e.deltaY * 33 : e.deltaY
+      // Trackpads send many small deltas; a mouse notch is ~100px.
+      while (Math.abs(acc) >= 60) {
+        step(acc > 0 ? 1 : -1)
+        acc -= Math.sign(acc) * 60
+      }
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
   const reducedMotion = useReducedMotion()
   const captured = useMemo(() => capturedFrom(fen), [fen])
   // Click-to-move (touch friendly): first click picks a piece, second picks the target.
   const [selected, setSelected] = useState<string | null>(null)
-  useEffect(() => setSelected(null), [fen, input])
+  // Clear on a new position or input mode only: `input` is rebuilt on every parent render
+  // (engine updates), which used to wipe the legal-move dots mid-thought.
+  const inputKey = input ? input.side : null
+  useEffect(() => setSelected(null), [fen, inputKey])
 
   const targetMoves = useMemo(() => {
-    if (!input || !selected) return []
+    if (!inputKey || !selected) return []
     try {
       return new Chess(fen).moves({ square: selected as Square, verbose: true })
     } catch {
       return []
     }
-  }, [fen, input, selected])
+  }, [fen, inputKey, selected])
   const targets = useMemo(() => targetMoves.map((m) => m.to as string), [targetMoves])
 
   const squareStyles = useMemo(() => {
@@ -234,12 +272,13 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
           <div className="eval-fill" style={{ height: `${bottomShare * 100}%` }} />
           <span key={evalText} className={`eval-text ${bottomAhead ? 'eval-bottom' : 'eval-top'}`}>{evalText}</span>
         </div>
-        <div className="board" role="group" aria-label={inputSession?.startsWith('variation-') ? 'Your line: move either side’s pieces to explore' : inputSession ? 'Retry position: drag a piece or tap its start and destination' : 'Chessboard'}
+        <div className="board" role="group" aria-label={inputSession === 'explore' ? 'Your line: move either side’s pieces to explore' : inputSession ? 'Retry position: drag a piece or tap its start and destination' : 'Chessboard'}
           style={{ touchAction: inputSession ? 'none' : 'pan-y' }}
           onPointerDown={(e) => {
             if (onStep && !inputSession && e.pointerType !== 'mouse') swipe.current = { id: e.pointerId, x: e.clientX, y: e.clientY, time: performance.now() }
           }}
           onPointerCancel={() => { swipe.current = null }}
+          ref={boardRef}
           onPointerUp={(e) => {
             const start = swipe.current
             swipe.current = null
@@ -253,6 +292,7 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
             key={inputSession ?? 'view'}
             theme={theme}
             badge={badge}
+            ends={ends}
             id="review-board"
             position={fen}
             boardOrientation={orientation}
@@ -267,6 +307,9 @@ export function BoardArea({ fen, input, inputSession, orientation, white, black,
               return accepted
             }}
             onSquareClick={onSquareClick}
+            // Dragging shows the same legal-move dots as tapping.
+            onPieceDragBegin={(piece, square) => { if (live.current.input && piece[0] === live.current.myColor) setSelected(square) }}
+            onPieceDragEnd={() => setSelected(null)}
             areArrowsAllowed={false}
             animationDuration={reducedMotion ? 0 : 200}
             customArrows={arrows}

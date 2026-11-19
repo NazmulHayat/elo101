@@ -3,7 +3,7 @@ import { LABEL_ORDER, LABELS } from '../labels'
 import { LABEL_HELP } from '../lib/help'
 import { LabelIcon } from './LabelIcon'
 
-const SHORTCUTS = [['← / →', 'Previous / next move'], ['Home / End', 'First / final position'], ['Space', 'Play / pause'], ['F', 'Flip the board'], ['?', 'Open this help']]
+const SHORTCUTS = [['← / →', 'Previous / next move'], ['↑ / ↓', 'Start / end of the game'], ['Home / End', 'Start / end of the game'], ['Space', 'Play / pause'], ['F', 'Flip the board'], ['?', 'Open this help']]
 
 /** One help popover: what each move label means, plus the keyboard shortcuts. `?` toggles it. */
 export function HelpMenu() {
