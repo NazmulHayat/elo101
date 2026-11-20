@@ -228,7 +228,7 @@ PAGES = [
 ]
 
 CSS = """
-:root{--page:#f6f5f3;--panel:#fff;--well:#efedea;--line:rgba(0,0,0,.09);--ink:#1c1b19;--ink2:#46433f;--muted:#6f6c68;--brand:#2f7df0;--brand-ink:#fff}
+:root{--page:#f6f5f3;--panel:#fff;--well:#efedea;--line:rgba(0,0,0,.09);--ink:#1c1b19;--ink2:#46433f;--muted:#64615d;--brand:#1a66d6;--btn:#1a66d6;--brand-ink:#fff}
 @media (prefers-color-scheme:dark){:root{--page:#1c1b19;--panel:#262421;--well:#2f2d2a;--line:rgba(255,255,255,.08);--ink:#fff;--ink2:#d4d2cf;--muted:#a3a19e;--brand:#3b8cff}}
 *,*::before,*::after{box-sizing:border-box}
 body{margin:0;background:var(--page);color:var(--ink2);font:17px/1.65 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -249,11 +249,11 @@ h2{font-size:24px;margin:44px 0 12px}
 .lede{font-size:19px;max-width:66ch;margin:0 0 22px}
 .cta-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px 0}
 .cta-row span{color:var(--muted);font-size:15px}
-.btn{display:inline-block;background:var(--brand);color:var(--brand-ink);font-weight:800;text-decoration:none;padding:12px 22px;border-radius:12px}
+.btn{display:inline-block;background:var(--btn);color:var(--brand-ink);font-weight:800;text-decoration:none;padding:12px 22px;border-radius:12px}
 .btn:hover{filter:brightness(1.08)}
 ul.ticks,ol.steps{padding-left:22px}ul.ticks li,ol.steps li{margin:8px 0}
 b,strong{color:var(--ink)}
-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.86em;background:var(--well);padding:1px 6px;border-radius:6px}
+code{font-family:ui-monospace,monospace;font-size:.86em;background:var(--well);padding:1px 6px;border-radius:6px}
 .note{background:var(--well);border-radius:12px;padding:12px 16px;font-size:15px}
 .shots{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0}
 .shots figure{margin:0}.shots img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
@@ -264,8 +264,8 @@ table{width:100%;border-collapse:collapse;background:var(--panel);border:1px sol
 th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
 th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
 .pill{display:inline-block;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 10px;border-radius:8px;color:#fff}
-.brilliant{background:#0e8f9c}.great{background:#3b6fd9}.best{background:#2e8f52}.excellent{background:#5f8f3a}.good{background:#6b7d63}
-.book{background:#8a6a4c}.inaccuracy{background:#f2b33d;color:#1c1b19}.mistake{background:#c4621f}.miss{background:#c2416c}.blunder{background:#c9282b}
+.brilliant{background:#0b7a85}.great{background:#3b6fd9}.best{background:#23804a}.excellent{background:#4c7a2e}.good{background:#5c6d55}
+.book{background:#8a6a4c}.inaccuracy{background:#f2b33d;color:#1c1b19}.mistake{background:#ad5418}.miss{background:#c2416c}.blunder{background:#c9282b}
 .faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
 .faq summary{cursor:pointer;font-weight:700;color:var(--ink)}
 .faq p{margin:8px 0 0}
