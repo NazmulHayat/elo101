@@ -176,8 +176,7 @@ export function Home({ theme, children }: { theme: BoardThemeSpec; children: Rea
       <section className="home-band home-wrap" id="extension">
         <div className="ext-card">
           <div className="ext-copy">
-            <p className="ext-kicker">Chrome extension</p>
-            <h2>Review straight from Chess.com and Lichess</h2>
+            <h2>Review straight from Chess.com and Lichess with the Chrome extension</h2>
             <p>When your game ends, an elo101 button appears on the page. One click opens the full review. It stays out of the way while you play, and it's free.</p>
             <ol className="ext-steps">
               <li><span>Add elo101 to Chrome</span></li>

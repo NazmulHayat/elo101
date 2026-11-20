@@ -679,7 +679,6 @@ kbd { padding: 2px 7px; border-radius: 5px; background: var(--btn); box-shadow: 
   padding: 52px; border-radius: 22px; background:
   radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 60%), var(--panel);
   box-shadow: 0 0 0 1px var(--line-strong), 0 30px 60px -40px rgba(0, 0, 0, .6); }
-.ext-kicker { margin: 0 0 12px; color: var(--link); font-size: 12.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .ext-copy h2 { margin: 0 0 14px; font: 700 38px/1.1 var(--display); letter-spacing: -.03em; text-wrap: balance; }
 .ext-copy > p { margin: 0 0 22px; max-width: 34em; color: var(--ink-2); font-size: 17px; }
 .ext-steps { list-style: none; counter-reset: step; margin: 0 0 28px; padding: 0; display: grid; gap: 12px; }
