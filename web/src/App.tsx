@@ -613,7 +613,8 @@ export default function App() {
           </div>
           <div className="analysis-status" role="status">
             <strong>{progress.total ? `${Math.round(progress.done / progress.total * 100)}%` : 'Starting Stockfish…'}</strong>
-            {progress.total > 1 && <span>Analyzing move {Math.max(1, progress.done - 1)} of {progress.total - 1}</span>}
+            {/* progress counts positions (one per half-move, plus the start); show full moves as chess numbers them. */}
+            {progress.total > 1 && <span>Analyzing move {Math.max(1, Math.ceil((progress.done - 1) / 2))} of {Math.ceil((progress.total - 1) / 2)}</span>}
             <span className="muted">{progress.done > 1 && progress.elapsed > 0
               ? (() => { const seconds = Math.max(1, Math.ceil((progress.total - progress.done) * progress.elapsed / progress.done)); return seconds < 60 ? `About ${seconds} sec left` : `About ${Math.ceil(seconds / 60)} min left` })()
               : 'Estimating time remaining…'}</span>
