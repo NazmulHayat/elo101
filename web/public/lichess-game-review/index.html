@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lichess Game Review With Move Labels and Accuracy · elo101</title>
+<meta name="description" content="Review Lichess games with Brilliant, Great, Best, Miss and Blunder labels judged for your rating, plus accuracy, game rating and a retry mode. Free, no account.">
+<link rel="canonical" href="https://elo101.vercel.app/lichess-game-review/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#1c1b19">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="elo101">
+<meta property="og:title" content="Lichess Game Review With Move Labels and Accuracy · elo101">
+<meta property="og:description" content="Review Lichess games with Brilliant, Great, Best, Miss and Blunder labels judged for your rating, plus accuracy, game rating and a retry mode. Free, no account.">
+<meta property="og:url" content="https://elo101.vercel.app/lichess-game-review/">
+<meta property="og:image" content="https://elo101.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Lichess Game Review With Move Labels and Accuracy · elo101">
+<meta name="twitter:description" content="Review Lichess games with Brilliant, Great, Best, Miss and Blunder labels judged for your rating, plus accuracy, game rating and a retry mode. Free, no account.">
+<meta name="twitter:image" content="https://elo101.vercel.app/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;700;800&family=Geist:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--page:#f6f5f3;--panel:#fff;--well:#efedea;--line:rgba(0,0,0,.09);--ink:#1c1b19;--ink2:#46433f;--muted:#64615d;--brand:#1a66d6;--btn:#1a66d6;--brand-ink:#fff}
+@media (prefers-color-scheme:dark){:root{--page:#1c1b19;--panel:#262421;--well:#2f2d2a;--line:rgba(255,255,255,.08);--ink:#fff;--ink2:#d4d2cf;--muted:#a3a19e;--brand:#3b8cff}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink2);font:17px/1.65 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--brand)}
+.top{border-bottom:1px solid var(--line);background:var(--panel)}
+.top-in,.foot-in,main{max-width:860px;margin:0 auto;padding:0 16px}
+.top-in{display:flex;align-items:center;gap:18px;min-height:58px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font:800 19px/1 Geist,Figtree,sans-serif;color:var(--ink);text-decoration:none}
+.logo img{width:28px;height:28px;border-radius:7px}
+.top nav{display:flex;gap:14px;flex-wrap:wrap;font-size:15px;margin-left:auto}
+.top nav a{color:var(--ink2);text-decoration:none}.top nav a:hover,.top nav a[aria-current]{color:var(--ink)}
+.top nav a[aria-current]{font-weight:700}
+main{padding-top:40px;padding-bottom:64px}
+.crumbs{font-size:14px;color:var(--muted);margin:0 0 10px}.crumbs a{color:var(--muted)}
+h1,h2,h3{font-family:Geist,Figtree,sans-serif;color:var(--ink);letter-spacing:-.02em;line-height:1.15}
+h1{font-size:clamp(30px,5vw,44px);margin:0 0 14px}
+h2{font-size:24px;margin:44px 0 12px}
+.lede{font-size:19px;max-width:66ch;margin:0 0 22px}
+.cta-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px 0}
+.cta-row span{color:var(--muted);font-size:15px}
+.btn{display:inline-block;background:var(--btn);color:var(--brand-ink);font-weight:800;text-decoration:none;padding:12px 22px;border-radius:12px}
+.btn:hover{filter:brightness(1.08)}
+ul.ticks,ol.steps{padding-left:22px}ul.ticks li,ol.steps li{margin:8px 0}
+b,strong{color:var(--ink)}
+code{font-family:ui-monospace,monospace;font-size:.86em;background:var(--well);padding:1px 6px;border-radius:6px}
+.note{background:var(--well);border-radius:12px;padding:12px 16px;font-size:15px}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0}
+.shots figure{margin:0}.shots img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
+.shots figcaption{font-size:14px;color:var(--muted);margin-top:6px}
+@media (max-width:640px){.shots{grid-template-columns:1fr}.top nav{margin-left:0}}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:16px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.pill{display:inline-block;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 10px;border-radius:8px;color:#fff}
+.brilliant{background:#0b7a85}.great{background:#3b6fd9}.best{background:#23804a}.excellent{background:#4c7a2e}.good{background:#5c6d55}
+.book{background:#8a6a4c}.inaccuracy{background:#f2b33d;color:#1c1b19}.mistake{background:#ad5418}.miss{background:#c2416c}.blunder{background:#c9282b}
+.faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
+.faq summary{cursor:pointer;font-weight:700;color:var(--ink)}
+.faq p{margin:8px 0 0}
+.more{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.more a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink);font-weight:700}
+.more a span{display:block;font-weight:400;color:var(--muted);font-size:14px;margin-top:4px}
+.foot{border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.foot-in{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;padding-top:20px;padding-bottom:28px}
+.foot a{color:var(--muted)}.foot nav{display:flex;gap:14px;flex-wrap:wrap}
+</style>
+<script type="application/ld+json">[
+ {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "Lichess Game Review With Move Labels and Accuracy · elo101",
+  "description": "Review Lichess games with Brilliant, Great, Best, Miss and Blunder labels judged for your rating, plus accuracy, game rating and a retry mode. Free, no account.",
+  "url": "https://elo101.vercel.app/lichess-game-review/",
+  "dateModified": "2026-11-20",
+  "isPartOf": {
+   "@type": "WebSite",
+   "name": "elo101",
+   "url": "https://elo101.vercel.app/"
+  }
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+   {
+    "@type": "ListItem",
+    "position": 1,
+    "name": "elo101",
+    "item": "https://elo101.vercel.app/"
+   },
+   {
+    "@type": "ListItem",
+    "position": 2,
+    "name": "Lichess",
+    "item": "https://elo101.vercel.app/lichess-game-review/"
+   }
+  ]
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+   {
+    "@type": "Question",
+    "name": "How is this different from Lichess's computer analysis?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Lichess shows inaccuracies, mistakes and blunders from one engine score. elo101 adds Brilliant, Great, Best, Excellent, Good, Book and Miss, judges moves for the players' ratings, and adds a game rating and a retry mode."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Does it use Lichess's own analysis?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "No. elo101 runs its own Stockfish 18 in your browser on every move, so any game can be reviewed right away."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Is the accuracy the same as on Lichess?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "It uses the same published formula on elo101's own engine evaluations, so it lands close: within about 3 points on average."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Do I need a Lichess account?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "No. Public games can be found by username or link without logging in anywhere."
+    }
+   }
+  ]
+ }
+]</script>
+</head>
+<body>
+<header class="top"><div class="top-in"><a class="logo" href="/"><img src="/apple-touch-icon.png" alt="" width="28" height="28">elo101</a><nav aria-label="Guides"><a href="/free-chess-game-review/">Free game review</a><a href="/chess-com-game-review/">Chess.com</a><a href="/lichess-game-review/" aria-current="page">Lichess</a><a href="/chess-move-labels/">Move labels</a><a href="/how-it-works/">How it works</a></nav></div></header>
+<main>
+<p class="crumbs"><a href="/">elo101</a> › Lichess</p>
+<h1>Lichess game review, with labels for your rating</h1>
+<p class="lede">Lichess&#x27;s computer analysis marks inaccuracies, mistakes and blunders. elo101 adds the rest: Brilliant, Great, Best and Miss, labels judged for your rating, a game rating for both players and a mode to retry your mistakes.</p>
+
+<p class="cta-row"><a class="btn" href="/">Review a game now</a><span>Free · no account · runs in your browser</span></p>
+<h2>Bring in a Lichess game</h2>
+<ol class="steps">
+  <li><b>By username.</b> Choose the Lichess tab on <a href="/">elo101</a>, type your username and pick a recent game.</li>
+  <li><b>By link.</b> Paste any <code>lichess.org/…</code> game link.</li>
+  <li><b>With the Chrome extension.</b> When your game ends on Lichess, click the elo101 button to open its review.</li>
+</ol>
+
+<div class="shots">
+  <figure><img src="/home/shot-blunder.jpg" width="2560" height="1440" loading="lazy" alt="elo101 game review: Bxd1 is labelled a blunder that allows mate in 2, Nxe5 was best, with a Retry button"><figcaption>Every move gets a label and a plain explanation.</figcaption></figure>
+  <figure><img src="/home/shot-correct.jpg" width="2560" height="1440" loading="lazy" alt="elo101 Retry mode: Nxe5 is correct, the strongest move Stockfish found"><figcaption>Then retry the position until you find the better move.</figcaption></figure>
+</div>
+<h2>What elo101 adds to Lichess analysis</h2>
+<ul class="ticks">
+  <li><b>Ten move labels</b> instead of three, including Brilliant, Great and Miss. <a href="/chess-move-labels/">What they mean →</a></li>
+  <li><b>Judged for your rating:</b> the model learned from millions of Lichess games how often players at each level actually win from a position.</li>
+  <li><b>Chances, not just centipawns:</b> a graph of who was likely to win, using both ratings and the clocks.</li>
+  <li><b>Game rating:</b> roughly what rating each player played like in this game.</li>
+  <li><b>Retry mode</b> to find the better move yourself.</li>
+</ul>
+<h2>Close to Lichess where it should be</h2>
+<p>Accuracy uses Lichess's published formula. On a benchmark of real games, elo101's accuracy is within about 3 points of Lichess's, and every blunder elo101 flags is also a blunder on Lichess. The engine runs in your browser, so a review doesn't depend on Lichess's server analysis being requested.</p>
+
+<section class="faq"><h2>Questions</h2><details><summary>How is this different from Lichess&#x27;s computer analysis?</summary><p>Lichess shows inaccuracies, mistakes and blunders from one engine score. elo101 adds Brilliant, Great, Best, Excellent, Good, Book and Miss, judges moves for the players&#x27; ratings, and adds a game rating and a retry mode.</p></details><details><summary>Does it use Lichess&#x27;s own analysis?</summary><p>No. elo101 runs its own Stockfish 18 in your browser on every move, so any game can be reviewed right away.</p></details><details><summary>Is the accuracy the same as on Lichess?</summary><p>It uses the same published formula on elo101&#x27;s own engine evaluations, so it lands close: within about 3 points on average.</p></details><details><summary>Do I need a Lichess account?</summary><p>No. Public games can be found by username or link without logging in anywhere.</p></details></section>
+<section><h2>More from elo101</h2><div class="more"><a href="/free-chess-game-review/">Free game review<span>Unlimited reviews, no account</span></a><a href="/chess-com-game-review/">Chess.com<span>Review Chess.com games, no daily limit</span></a><a href="/chess-move-labels/">Move labels<span>Brilliant, Great, Miss, Blunder explained</span></a><a href="/how-it-works/">How it works<span>Expected points, accuracy, game rating</span></a></div></section>
+</main>
+<footer class="foot"><div class="foot-in"><span>elo101 is free and open source. Not affiliated with Chess.com or Lichess.</span><nav><a href="/">Review a game</a><a href="/support.html">Support</a><a href="/privacy.html">Privacy</a><a href="https://github.com/NazmulHayat/elo101">GitHub</a></nav></div></footer>
+</body>
+</html>

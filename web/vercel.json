@@ -38,5 +38,32 @@
       "source": "/admin",
       "destination": "/admin/index.html"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/free-chess-game-review",
+      "destination": "/free-chess-game-review/",
+      "permanent": true
+    },
+    {
+      "source": "/chess-com-game-review",
+      "destination": "/chess-com-game-review/",
+      "permanent": true
+    },
+    {
+      "source": "/lichess-game-review",
+      "destination": "/lichess-game-review/",
+      "permanent": true
+    },
+    {
+      "source": "/chess-move-labels",
+      "destination": "/chess-move-labels/",
+      "permanent": true
+    },
+    {
+      "source": "/how-it-works",
+      "destination": "/how-it-works/",
+      "permanent": true
+    }
   ]
 }

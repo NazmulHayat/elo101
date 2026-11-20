@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How elo101 Reviews Chess Games: Expected Points and Accuracy</title>
+<meta name="description" content="How elo101 judges chess moves: a model trained on millions of Lichess games predicts expected score from the engine score, ratings and clocks.">
+<link rel="canonical" href="https://elo101.vercel.app/how-it-works/">
+<meta name="robots" content="index, follow, max-image-preview:large">
+<meta name="theme-color" content="#1c1b19">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="elo101">
+<meta property="og:title" content="How elo101 Reviews Chess Games: Expected Points and Accuracy">
+<meta property="og:description" content="How elo101 judges chess moves: a model trained on millions of Lichess games predicts expected score from the engine score, ratings and clocks.">
+<meta property="og:url" content="https://elo101.vercel.app/how-it-works/">
+<meta property="og:image" content="https://elo101.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="How elo101 Reviews Chess Games: Expected Points and Accuracy">
+<meta name="twitter:description" content="How elo101 judges chess moves: a model trained on millions of Lichess games predicts expected score from the engine score, ratings and clocks.">
+<meta name="twitter:image" content="https://elo101.vercel.app/og-image.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;700;800&family=Geist:wght@700;800&display=swap" rel="stylesheet">
+<style>
+:root{--page:#f6f5f3;--panel:#fff;--well:#efedea;--line:rgba(0,0,0,.09);--ink:#1c1b19;--ink2:#46433f;--muted:#64615d;--brand:#1a66d6;--btn:#1a66d6;--brand-ink:#fff}
+@media (prefers-color-scheme:dark){:root{--page:#1c1b19;--panel:#262421;--well:#2f2d2a;--line:rgba(255,255,255,.08);--ink:#fff;--ink2:#d4d2cf;--muted:#a3a19e;--brand:#3b8cff}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink2);font:17px/1.65 Figtree,system-ui,-apple-system,"Segoe UI",sans-serif}
+a{color:var(--brand)}
+.top{border-bottom:1px solid var(--line);background:var(--panel)}
+.top-in,.foot-in,main{max-width:860px;margin:0 auto;padding:0 16px}
+.top-in{display:flex;align-items:center;gap:18px;min-height:58px;flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font:800 19px/1 Geist,Figtree,sans-serif;color:var(--ink);text-decoration:none}
+.logo img{width:28px;height:28px;border-radius:7px}
+.top nav{display:flex;gap:14px;flex-wrap:wrap;font-size:15px;margin-left:auto}
+.top nav a{color:var(--ink2);text-decoration:none}.top nav a:hover,.top nav a[aria-current]{color:var(--ink)}
+.top nav a[aria-current]{font-weight:700}
+main{padding-top:40px;padding-bottom:64px}
+.crumbs{font-size:14px;color:var(--muted);margin:0 0 10px}.crumbs a{color:var(--muted)}
+h1,h2,h3{font-family:Geist,Figtree,sans-serif;color:var(--ink);letter-spacing:-.02em;line-height:1.15}
+h1{font-size:clamp(30px,5vw,44px);margin:0 0 14px}
+h2{font-size:24px;margin:44px 0 12px}
+.lede{font-size:19px;max-width:66ch;margin:0 0 22px}
+.cta-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:22px 0}
+.cta-row span{color:var(--muted);font-size:15px}
+.btn{display:inline-block;background:var(--btn);color:var(--brand-ink);font-weight:800;text-decoration:none;padding:12px 22px;border-radius:12px}
+.btn:hover{filter:brightness(1.08)}
+ul.ticks,ol.steps{padding-left:22px}ul.ticks li,ol.steps li{margin:8px 0}
+b,strong{color:var(--ink)}
+code{font-family:ui-monospace,monospace;font-size:.86em;background:var(--well);padding:1px 6px;border-radius:6px}
+.note{background:var(--well);border-radius:12px;padding:12px 16px;font-size:15px}
+.shots{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:26px 0}
+.shots figure{margin:0}.shots img{width:100%;height:auto;border-radius:12px;border:1px solid var(--line);display:block}
+.shots figcaption{font-size:14px;color:var(--muted);margin-top:6px}
+@media (max-width:640px){.shots{grid-template-columns:1fr}.top nav{margin-left:0}}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:16px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.pill{display:inline-block;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 10px;border-radius:8px;color:#fff}
+.brilliant{background:#0b7a85}.great{background:#3b6fd9}.best{background:#23804a}.excellent{background:#4c7a2e}.good{background:#5c6d55}
+.book{background:#8a6a4c}.inaccuracy{background:#f2b33d;color:#1c1b19}.mistake{background:#ad5418}.miss{background:#c2416c}.blunder{background:#c9282b}
+.faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
+.faq summary{cursor:pointer;font-weight:700;color:var(--ink)}
+.faq p{margin:8px 0 0}
+.more{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.more a{display:block;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-decoration:none;color:var(--ink);font-weight:700}
+.more a span{display:block;font-weight:400;color:var(--muted);font-size:14px;margin-top:4px}
+.foot{border-top:1px solid var(--line);font-size:14px;color:var(--muted)}
+.foot-in{display:flex;gap:16px;flex-wrap:wrap;justify-content:space-between;padding-top:20px;padding-bottom:28px}
+.foot a{color:var(--muted)}.foot nav{display:flex;gap:14px;flex-wrap:wrap}
+</style>
+<script type="application/ld+json">[
+ {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  "name": "How elo101 Reviews Chess Games: Expected Points and Accuracy",
+  "description": "How elo101 judges chess moves: a model trained on millions of Lichess games predicts expected score from the engine score, ratings and clocks.",
+  "url": "https://elo101.vercel.app/how-it-works/",
+  "dateModified": "2026-11-20",
+  "isPartOf": {
+   "@type": "WebSite",
+   "name": "elo101",
+   "url": "https://elo101.vercel.app/"
+  }
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+   {
+    "@type": "ListItem",
+    "position": 1,
+    "name": "elo101",
+    "item": "https://elo101.vercel.app/"
+   },
+   {
+    "@type": "ListItem",
+    "position": 2,
+    "name": "How it works",
+    "item": "https://elo101.vercel.app/how-it-works/"
+   }
+  ]
+ },
+ {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+   {
+    "@type": "Question",
+    "name": "What are expected points in chess?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Expected points is the score a player can expect from a position: 1 for a win, ½ for a draw and 0 for a loss, averaged over how games like it actually end. 0.70 means about 70%."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "How is elo101's accuracy calculated?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "With Lichess's published accuracy formula, applied to elo101's own Stockfish evaluations in your browser."
+    }
+   },
+   {
+    "@type": "Question",
+    "name": "Is elo101 open source?",
+    "acceptedAnswer": {
+     "@type": "Answer",
+     "text": "Yes. The code, model training pipeline and benchmark results are on GitHub under the MIT license."
+    }
+   }
+  ]
+ }
+]</script>
+</head>
+<body>
+<header class="top"><div class="top-in"><a class="logo" href="/"><img src="/apple-touch-icon.png" alt="" width="28" height="28">elo101</a><nav aria-label="Guides"><a href="/free-chess-game-review/">Free game review</a><a href="/chess-com-game-review/">Chess.com</a><a href="/lichess-game-review/">Lichess</a><a href="/chess-move-labels/">Move labels</a><a href="/how-it-works/" aria-current="page">How it works</a></nav></div></header>
+<main>
+<p class="crumbs"><a href="/">elo101</a> › How it works</p>
+<h1>How elo101 reviews a chess game</h1>
+<p class="lede">A chess engine scores a position with one number, whoever is playing. elo101 turns that number into what really matters: how often players like you score from here.</p>
+
+<h2>The idea: the same position isn't the same for everyone</h2>
+<p>In one famous position the engine says White is clearly winning (+5.2), but the win needs a rook sacrifice and then a queen sacrifice. elo101's model gives White a 93% chance for two 2400-rated players, 84% for two 1600s and 69% for two 800s, in a 10-minute game. A plain engine score treats all three the same.</p>
+<h2>Expected points</h2>
+<p>elo101 predicts each player's <b>expected points</b> from a position: a win is 1, a draw ½, a loss 0. The model (gradient-boosted trees, LightGBM) learned this from millions of real Lichess games, using the Stockfish evaluation, both ratings, the time control, both clocks and the stage of the game. On positions from games it never saw, it predicts results 11.5% better than the formula Lichess uses, and its percentages are calibrated: when it says 70%, players score about 70%.</p>
+<h2>From expected points to move labels</h2>
+<ol class="steps">
+  <li>Stockfish scores the position after your move, and after the best move.</li>
+  <li>The model turns both scores into expected points for players of your rating.</li>
+  <li>The difference is what your move cost. Small costs are Excellent or Good; large ones are Mistakes or Blunders. Special checks find Brilliant sacrifices, Great only-moves and Misses. <a href="/chess-move-labels/">All labels →</a></li>
+</ol>
+<p>Moves are judged by a model that looks only at the board, not the clock, so hanging a queen in a bullet game is still a blunder.</p>
+<h2>Accuracy and game rating</h2>
+<p><b>Accuracy</b> uses Lichess's published formula, which weighs moves in sharp positions more and isn't hidden by one big blunder among good moves. <b>Game rating</b> estimates what rating each player played like in this game, from their accuracy and the players' average rating. The more accurate player never gets the lower game rating.</p>
+<h2>Runs in your browser</h2>
+<p>Stockfish 18 runs as WebAssembly on every CPU core, and the trained model runs as plain JavaScript. Your game is never sent to a server for analysis, which is why elo101 can be free with no limit.</p>
+<h2>Tested in the open</h2>
+<p>Every change is checked against a fixed benchmark of 450 real games, 300 puzzles and 64 hand-checked positions. The code, the model and the full results are on <a href="https://github.com/NazmulHayat/elo101">GitHub</a>.</p>
+<p class="cta-row"><a class="btn" href="/">Review a game now</a><span>Free · no account · runs in your browser</span></p>
+
+<section class="faq"><h2>Questions</h2><details><summary>What are expected points in chess?</summary><p>Expected points is the score a player can expect from a position: 1 for a win, ½ for a draw and 0 for a loss, averaged over how games like it actually end. 0.70 means about 70%.</p></details><details><summary>How is elo101&#x27;s accuracy calculated?</summary><p>With Lichess&#x27;s published accuracy formula, applied to elo101&#x27;s own Stockfish evaluations in your browser.</p></details><details><summary>Is elo101 open source?</summary><p>Yes. The code, model training pipeline and benchmark results are on GitHub under the MIT license.</p></details></section>
+<section><h2>More from elo101</h2><div class="more"><a href="/free-chess-game-review/">Free game review<span>Unlimited reviews, no account</span></a><a href="/chess-com-game-review/">Chess.com<span>Review Chess.com games, no daily limit</span></a><a href="/lichess-game-review/">Lichess<span>More labels for your Lichess games</span></a><a href="/chess-move-labels/">Move labels<span>Brilliant, Great, Miss, Blunder explained</span></a></div></section>
+</main>
+<footer class="foot"><div class="foot-in"><span>elo101 is free and open source. Not affiliated with Chess.com or Lichess.</span><nav><a href="/">Review a game</a><a href="/support.html">Support</a><a href="/privacy.html">Privacy</a><a href="https://github.com/NazmulHayat/elo101">GitHub</a></nav></div></footer>
+</body>
+</html>
