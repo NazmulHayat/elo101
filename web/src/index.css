@@ -686,19 +686,47 @@ kbd { padding: 2px 7px; border-radius: 5px; background: var(--btn); box-shadow: 
 .ext-steps li::before { content: counter(step); display: grid; place-items: center; width: 28px; height: 28px; flex: none;
   border-radius: 50%; background: var(--btn); box-shadow: var(--flat); color: var(--ink); font-size: 13px; font-weight: 800; }
 
-.ext-demo { position: relative; aspect-ratio: 4 / 3.3; }
-.ext-demo-board { position: absolute; inset: 0 12% 14% 0; border-radius: 16px; overflow: hidden;
-  background: url("/boards/ice.jpg") center / cover; box-shadow: 0 0 0 1px var(--line-strong), 0 24px 50px -24px rgba(0, 0, 0, .7); }
-.ext-demo-result { position: absolute; left: 16px; top: 16px; padding: 8px 12px; border-radius: 10px;
-  background: rgba(28, 27, 25, .88); color: #fff; font-size: 14px; font-weight: 800; }
-.ext-pill { position: absolute; right: 0; bottom: 0; display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 20px 0 8px;
+/* Extension preview: a finished game on a chess site, with the elo101 button in the page's bottom-right corner. */
+.ext-demo { min-width: 0; }
+.ext-page { position: relative; border-radius: 16px; overflow: hidden; background: #262522; color: #fff;
+  box-shadow: 0 0 0 1px var(--line-strong), 0 30px 60px -30px rgba(0, 0, 0, .8); padding-bottom: 84px; }
+.ext-page-bar { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; background: #1f1e1b; border-bottom: 1px solid rgba(255, 255, 255, .06); }
+.ext-page-bar i { width: 9px; height: 9px; border-radius: 50%; background: #45433f; }
+.ext-page-bar span { margin-left: 10px; color: #8f8d8a; font-size: 12px; font-weight: 700; }
+.ext-page-body { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 14px; padding: 14px 14px 0; }
+.ext-game { display: grid; gap: 8px; min-width: 0; }
+.ext-player { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; }
+.ext-player em { font-style: normal; font-weight: 600; color: #a7a5a2; }
+.ext-player time { margin-left: auto; padding: 4px 9px; border-radius: 6px; background: #3a3835; color: #c9c7c4; font: 800 13px/1 var(--display); font-variant-numeric: tabular-nums; }
+.ext-player time.on { background: #f4f3f1; color: #1c1b19; }
+.ext-avatar { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 6px; background: #e8e6e3; color: #1c1b19; font: 18px/1 var(--figurine); }
+.ext-avatar.dark { background: #4a4744; color: #fff; }
+.ext-board { position: relative; }
+.ext-board .themed-board { pointer-events: none; }
+.ext-result { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: grid; gap: 2px; justify-items: center;
+  min-width: 46%; padding: 14px 18px; border-radius: 12px; background: #262522; box-shadow: 0 16px 40px rgba(0, 0, 0, .55); }
+.ext-result strong { font: 800 20px/1.1 var(--display); }
+.ext-result span { color: #a7a5a2; font-size: 12.5px; font-weight: 700; }
+.ext-side { display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; background: #1f1e1b; font-size: 12.5px; }
+.ext-side-head { margin: 0 0 2px; color: #8f8d8a; font-weight: 800; }
+.ext-side ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ext-side li { display: grid; grid-template-columns: 24px 1fr 1fr; gap: 4px; font-weight: 700; color: #e8e6e3; }
+.ext-side li span:first-child { color: #8f8d8a; }
+.ext-side-score { margin: auto 0 0; color: #fff; font-weight: 800; text-align: center; }
+.ext-corner { position: absolute; right: 18px; bottom: 18px; left: 18px; display: flex; align-items: center; justify-content: flex-end; gap: 12px; }
+.ext-pill { flex: none; display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 18px 0 7px;
   border-radius: 999px; background: linear-gradient(180deg, #4d98ff, #2f7cf0); border: 1px solid rgba(255, 255, 255, .28);
-  box-shadow: 0 16px 34px -12px rgba(47, 124, 240, .8); color: #fff; font-size: 15.5px; font-weight: 700; }
-.ext-pill img { width: 36px; height: 36px; border-radius: 11px; box-shadow: 0 0 0 2px rgba(255, 255, 255, .9); }
+  box-shadow: 0 14px 30px -10px rgba(47, 124, 240, .8); color: #fff; font-size: 15px; font-weight: 700; }
+.ext-pill img { width: 34px; height: 34px; border-radius: 10px; box-shadow: 0 0 0 2px rgba(255, 255, 255, .9); }
 .ext-pill i { font-style: normal; opacity: .9; }
-.ext-bubble { position: absolute; right: 6%; bottom: 62px; padding: 12px 16px; border-radius: 16px 16px 4px 16px;
-  background: #262421; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 14px 40px rgba(0, 0, 0, .5); color: #fff; font-size: 15px; font-weight: 700; }
+.ext-bubble { min-width: 0; padding: 11px 15px; border-radius: 16px 4px 16px 16px; white-space: nowrap;
+  background: #2f2d2a; border: 1px solid rgba(255, 255, 255, .14); box-shadow: 0 14px 40px rgba(0, 0, 0, .5); color: #fff; font-size: 14px; font-weight: 700; }
 
+@media (max-width: 520px) {
+  .ext-bubble { display: none; }
+  .ext-page-body { grid-template-columns: minmax(0, 1fr); }
+  .ext-side { display: none; }
+}
 @media (max-width: 960px) {
   .ext-card { grid-template-columns: minmax(0, 1fr); gap: 36px; padding: 32px 22px; }
   .ext-copy h2 { font-size: 30px; }

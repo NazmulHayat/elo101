@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import type { BoardThemeSpec } from '../lib/settings'
+import { BOARD_THEMES, type BoardThemeSpec } from '../lib/settings'
 import type { Label } from '../types'
 import { LABELS } from '../labels'
 import { ThemedBoard } from './BoardArea'
@@ -10,6 +10,10 @@ const BASE = import.meta.env.BASE_URL
 const GITHUB = 'https://github.com/NazmulHayat/elo101'
 
 // Morphy's Opera Game before 13.Rxd7: Stockfish +5.2, but the win needs a rook and a queen sacrifice.
+// The Opera Game's final position, after 17.Rd8#: the finished game the extension preview shows.
+const MATE_FEN = '1n1Rkb1r/p4ppp/4q3/4p1B1/4P3/8/PPP2PPP/2K5 b k - 1 17'
+const MATE_MOVES = [['15.', 'Bxd7+', 'Nxd7'], ['16.', 'Qb8+', 'Nxb8'], ['17.', 'Rd8#', '']]
+
 const DEEP_FEN = '3rkb1r/p2nqppp/5n2/1B2p1B1/4P3/1Q6/PPP2PPP/2KR3R w k - 3 13'
 // White's chance of winning there in a 10-minute game, from the Chances model (ep_model/models_finetuned).
 const CHANCES = [
@@ -186,11 +190,28 @@ export function Home({ theme, children }: { theme: BoardThemeSpec; children: Rea
             <AddToChrome className="btn-lg" />
           </div>
           <div className="ext-demo" aria-hidden="true">
-            <div className="ext-demo-board">
-              <span className="ext-demo-result">You won · 1–0</span>
+            <div className="ext-page">
+              <div className="ext-page-bar"><i /><i /><i /><span>Your game · 10 min</span></div>
+              <div className="ext-page-body">
+                <div className="ext-game">
+                  <div className="ext-player"><b className="ext-avatar dark">♚</b><span>Opponent <em>(1488)</em></span><time>1:12</time></div>
+                  <div className="ext-board">
+                    <ThemedBoard theme={BOARD_THEMES.green} id="home-ext-board" position={MATE_FEN} arePiecesDraggable={false} areArrowsAllowed={false} />
+                    <div className="ext-result"><strong>You won!</strong><span>by checkmate</span></div>
+                  </div>
+                  <div className="ext-player"><b className="ext-avatar">♔</b><span>You <em>(1503)</em></span><time className="on">4:36</time></div>
+                </div>
+                <div className="ext-side">
+                  <p className="ext-side-head">Moves</p>
+                  <ol>{MATE_MOVES.map(([n, w, b]) => <li key={n}><span>{n}</span><span>{w}</span><span>{b}</span></li>)}</ol>
+                  <p className="ext-side-score">1–0</p>
+                </div>
+              </div>
+              <div className="ext-corner">
+                <div className="ext-bubble">Nice win 🔥 Let's analyse</div>
+                <div className="ext-pill"><img src={`${BASE}favicon.svg`} alt="" width={22} height={22} /><span>Review with Elo101</span><i>→</i></div>
+              </div>
             </div>
-            <div className="ext-pill"><img src={`${BASE}favicon.svg`} alt="" width={22} height={22} /><span>Review with Elo101</span><i>→</i></div>
-            <div className="ext-bubble">Nice win 🔥 Let's analyse</div>
           </div>
         </div>
       </section>
