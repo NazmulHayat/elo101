@@ -5,15 +5,18 @@
 **Free chess game review that knows who was playing.**<br>
 Every move is judged for *your* rating, and the win chances account for both players' ratings and clocks.
 
-[![Live app](https://img.shields.io/badge/app-elo101.vercel.app-3b8cff)](https://elo101.vercel.app/)
-[![CI](https://github.com/NazmulHayat/ChessCoach/actions/workflows/ci.yml/badge.svg)](https://github.com/NazmulHayat/ChessCoach/actions/workflows/ci.yml)
+[![Chrome Web Store](https://img.shields.io/chrome-web-store/v/hlhdgbelomlkdmiajjahhojecfikcnkl?label=Chrome%20Web%20Store&logo=googlechrome&logoColor=white&color=4285F4)](https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl)
+[![CI](https://github.com/NazmulHayat/elo101/actions/workflows/ci.yml/badge.svg)](https://github.com/NazmulHayat/elo101/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-React_19-3178C6?logo=typescript&logoColor=white)
 
-### [**▶ Try it: elo101.vercel.app**](https://elo101.vercel.app/)
+<a href="https://elo101.vercel.app/"><img src="https://img.shields.io/badge/%E2%96%B6%20Try%20it-elo101.vercel.app-3b8cff?style=for-the-badge" alt="Try it: elo101.vercel.app" height="40"></a>
+&nbsp;
+<a href="https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl"><img src="https://img.shields.io/badge/Add%20to%20Chrome-free-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Add to Chrome, free" height="40"></a>
 
-No account, no install. The chess engine and the models run in your browser.
+No account. The chess engine and the models run in your browser.<br>
+The Chrome extension adds a one-click **Review** button to Chess.com and Lichess.
 
 <img src="docs/images/demo.gif" alt="An elo101 review: stepping through a game to a blunder, then retrying the position and finding the best move" width="900">
 
@@ -85,7 +88,11 @@ Each move is compared with the engine's best move. The label depends on how much
 
 ### Chrome extension
 
-The [extension](extension/) adds an elo101 button to Chess.com and Lichess. When your game ends, one click opens its review. It does nothing while you are playing.
+<a href="https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl"><img src="docs/images/extension.jpg" alt="elo101 Chrome extension: review your chess game for free, one click from Chess.com and Lichess"></a>
+
+**[Add to Chrome, free →](https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl)**
+
+When your game ends on Chess.com or Lichess, an elo101 button appears on the page and one click opens the review. It does nothing while you are playing, and it also shows up next to Chess.com's "Daily limit reached" message. Source: [`extension/`](extension/).
 
 ## How it works
 

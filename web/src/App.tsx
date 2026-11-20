@@ -15,6 +15,7 @@ import { InfoTip } from './components/InfoTip'
 import { ReviewTour } from './components/ReviewTour'
 import { MODE_HELP } from './lib/help'
 import { Home } from './components/Home'
+import { ChromeIcon, STORE_URL } from './components/ChromeExtension'
 import { rememberGame } from './lib/recent'
 import { useAvatar } from './lib/avatar'
 import { endBadges } from './lib/ending'
@@ -754,6 +755,7 @@ export default function App() {
           <span>elo101</span>
         </a>
         <nav className="topbar-actions" aria-label="Site">
+          <a className="topbar-ext" href={STORE_URL} target="_blank" rel="noopener"><ChromeIcon size={16} /><span>Add to Chrome</span></a>
           <a className="topbar-link" href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
           {review && (
             <button type="button" className="btn btn-sm" onClick={goHome}>

@@ -64,6 +64,10 @@ th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 .pill{display:inline-block;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 10px;border-radius:8px;color:#fff}
 .brilliant{background:#0b7a85}.great{background:#3b6fd9}.best{background:#23804a}.excellent{background:#4c7a2e}.good{background:#5c6d55}
 .book{background:#8a6a4c}.inaccuracy{background:#f2b33d;color:#1c1b19}.mistake{background:#ad5418}.miss{background:#c2416c}.blunder{background:#c9282b}
+.ext{display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:40px 0;padding:26px 28px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:inset 4px 0 0 var(--brand)}
+.ext h2{margin:0 0 8px;font-size:22px}.ext p{margin:0;max-width:52ch}.ext-k{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 6px!important}
+.btn.chrome{display:inline-flex;align-items:center;gap:10px;white-space:nowrap}.btn.chrome svg{border-radius:50%;box-shadow:0 0 0 2px #fff}
+@media (pointer:coarse) and (max-width:1024px){.ext{display:none}}
 .faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
 .faq summary{cursor:pointer;font-weight:700;color:var(--ink)}
 .faq p{margin:8px 0 0}
@@ -166,7 +170,7 @@ th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 <ol class="steps">
   <li><b>By username.</b> Choose the Chess.com tab on <a href="/">elo101</a>, type your username and pick from your recent games.</li>
   <li><b>By link.</b> Paste a <code>chess.com/game/live/…</code> link. elo101 asks for one of the players' usernames to find it in Chess.com's public archive.</li>
-  <li><b>With the Chrome extension.</b> When your game ends, an elo101 button appears on Chess.com. One click opens the review. It also appears next to Chess.com's "Daily limit reached" message.</li>
+  <li><b>With the <a href="https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl">Chrome extension</a>.</b> When your game ends, an elo101 button appears on Chess.com. One click opens the review. It also appears next to Chess.com's "Daily limit reached" message.</li>
 </ol>
 <p class="note">Chess.com's public archive can take a few minutes to update after a game ends. Daily (correspondence) games aren't supported by link yet; paste the PGN instead.</p>
 
@@ -174,6 +178,12 @@ th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
   <figure><img src="/home/shot-blunder.jpg" width="2560" height="1440" loading="lazy" alt="elo101 game review: Bxd1 is labelled a blunder that allows mate in 2, Nxe5 was best, with a Retry button"><figcaption>Every move gets a label and a plain explanation.</figcaption></figure>
   <figure><img src="/home/shot-correct.jpg" width="2560" height="1440" loading="lazy" alt="elo101 Retry mode: Nxe5 is correct, the strongest move Stockfish found"><figcaption>Then retry the position until you find the better move.</figcaption></figure>
 </div>
+
+<aside class="ext" aria-label="Chrome extension">
+  <div><p class="ext-k">Chrome extension</p><h2>Review straight from Chess.com and Lichess</h2>
+  <p>When your game ends, an elo101 button appears on the page. One click opens the full review. Free, and it stays out of the way while you play.</p></div>
+  <a class="btn chrome" href="https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl" rel="noopener"><svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 24 4.95 13A22 22 0 0 1 43.05 13Z" fill="#db4437"/><path d="M24 24 43.05 13A22 22 0 0 1 24 46Z" fill="#f4c20d"/><path d="M24 24 24 46A22 22 0 0 1 4.95 13Z" fill="#0f9d58"/><circle cx="24" cy="24" r="10" fill="#fff"/><circle cx="24" cy="24" r="8" fill="#4285f4"/></svg><span>Add to Chrome, free</span></a>
+</aside>
 <h2>The labels you know</h2>
 <p>elo101 uses the move labels Chess.com players are used to: Brilliant, Great, Best, Excellent, Good, Book, Inaccuracy, Mistake, Miss and Blunder. The rules behind them are elo101's own, published openly, and moves are judged for your rating. <a href="/chess-move-labels/">What every label means →</a></p>
 <h2>What's different from Chess.com Game Review</h2>
@@ -187,6 +197,6 @@ th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 <section class="faq"><h2>Questions</h2><details><summary>Is this Chess.com&#x27;s Game Review?</summary><p>No. elo101 is an independent, free tool and isn&#x27;t affiliated with Chess.com. It reads your public games from Chess.com&#x27;s public archive and reviews them in your browser.</p></details><details><summary>Is there a daily limit?</summary><p>No. You can review as many Chess.com games as you like.</p></details><details><summary>Will the labels match Chess.com&#x27;s exactly?</summary><p>Not always. elo101 uses the same label names and bands, but its own published rules and model, so a few moves can come out differently. Blunders and mistakes usually agree.</p></details><details><summary>Why can&#x27;t it find my game?</summary><p>Chess.com&#x27;s public archive can take a little while to update after a game ends. Try again in a few minutes, enter either player&#x27;s username, or paste the PGN.</p></details><details><summary>Can I review Chess.com daily games?</summary><p>Not by link yet. Download or copy the game&#x27;s PGN from Chess.com and paste it into elo101.</p></details></section>
 <section><h2>More from elo101</h2><div class="more"><a href="/free-chess-game-review/">Free game review<span>Unlimited reviews, no account</span></a><a href="/lichess-game-review/">Lichess<span>More labels for your Lichess games</span></a><a href="/chess-move-labels/">Move labels<span>Brilliant, Great, Miss, Blunder explained</span></a><a href="/how-it-works/">How it works<span>Expected points, accuracy, game rating</span></a></div></section>
 </main>
-<footer class="foot"><div class="foot-in"><span>elo101 is free and open source. Not affiliated with Chess.com or Lichess.</span><nav><a href="/">Review a game</a><a href="/support.html">Support</a><a href="/privacy.html">Privacy</a><a href="https://github.com/NazmulHayat/elo101">GitHub</a></nav></div></footer>
+<footer class="foot"><div class="foot-in"><span>elo101 is free and open source. Not affiliated with Chess.com or Lichess.</span><nav><a href="/">Review a game</a><a href="https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl">Chrome extension</a><a href="/support.html">Support</a><a href="/privacy.html">Privacy</a><a href="https://github.com/NazmulHayat/elo101">GitHub</a></nav></div></footer>
 </body>
 </html>

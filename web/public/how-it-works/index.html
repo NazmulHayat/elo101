@@ -64,6 +64,10 @@ th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 .pill{display:inline-block;white-space:nowrap;font-weight:800;font-size:14px;padding:3px 10px;border-radius:8px;color:#fff}
 .brilliant{background:#0b7a85}.great{background:#3b6fd9}.best{background:#23804a}.excellent{background:#4c7a2e}.good{background:#5c6d55}
 .book{background:#8a6a4c}.inaccuracy{background:#f2b33d;color:#1c1b19}.mistake{background:#ad5418}.miss{background:#c2416c}.blunder{background:#c9282b}
+.ext{display:flex;gap:24px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:40px 0;padding:26px 28px;border-radius:18px;background:var(--panel);border:1px solid var(--line);box-shadow:inset 4px 0 0 var(--brand)}
+.ext h2{margin:0 0 8px;font-size:22px}.ext p{margin:0;max-width:52ch}.ext-k{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 6px!important}
+.btn.chrome{display:inline-flex;align-items:center;gap:10px;white-space:nowrap}.btn.chrome svg{border-radius:50%;box-shadow:0 0 0 2px #fff}
+@media (pointer:coarse) and (max-width:1024px){.ext{display:none}}
 .faq details{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:10px 0}
 .faq summary{cursor:pointer;font-weight:700;color:var(--ink)}
 .faq p{margin:8px 0 0}
@@ -167,6 +171,6 @@ th{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mute
 <section class="faq"><h2>Questions</h2><details><summary>What are expected points in chess?</summary><p>Expected points is the score a player can expect from a position: 1 for a win, ½ for a draw and 0 for a loss, averaged over how games like it actually end. 0.70 means about 70%.</p></details><details><summary>How is elo101&#x27;s accuracy calculated?</summary><p>With Lichess&#x27;s published accuracy formula, applied to elo101&#x27;s own Stockfish evaluations in your browser.</p></details><details><summary>Is elo101 open source?</summary><p>Yes. The code, model training pipeline and benchmark results are on GitHub under the MIT license.</p></details></section>
 <section><h2>More from elo101</h2><div class="more"><a href="/free-chess-game-review/">Free game review<span>Unlimited reviews, no account</span></a><a href="/chess-com-game-review/">Chess.com<span>Review Chess.com games, no daily limit</span></a><a href="/lichess-game-review/">Lichess<span>More labels for your Lichess games</span></a><a href="/chess-move-labels/">Move labels<span>Brilliant, Great, Miss, Blunder explained</span></a></div></section>
 </main>
-<footer class="foot"><div class="foot-in"><span>elo101 is free and open source. Not affiliated with Chess.com or Lichess.</span><nav><a href="/">Review a game</a><a href="/support.html">Support</a><a href="/privacy.html">Privacy</a><a href="https://github.com/NazmulHayat/elo101">GitHub</a></nav></div></footer>
+<footer class="foot"><div class="foot-in"><span>elo101 is free and open source. Not affiliated with Chess.com or Lichess.</span><nav><a href="/">Review a game</a><a href="https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl">Chrome extension</a><a href="/support.html">Support</a><a href="/privacy.html">Privacy</a><a href="https://github.com/NazmulHayat/elo101">GitHub</a></nav></div></footer>
 </body>
 </html>

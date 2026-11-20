@@ -4,9 +4,10 @@ import type { Label } from '../types'
 import { LABELS } from '../labels'
 import { ThemedBoard } from './BoardArea'
 import { LabelIcon } from './LabelIcon'
+import { AddToChrome, STORE_URL } from './ChromeExtension'
 
 const BASE = import.meta.env.BASE_URL
-const GITHUB = 'https://github.com/NazmulHayat/ChessCoach'
+const GITHUB = 'https://github.com/NazmulHayat/elo101'
 
 // Morphy's Opera Game before 13.Rxd7: Stockfish +5.2, but the win needs a rook and a queen sacrifice.
 const DEEP_FEN = '3rkb1r/p2nqppp/5n2/1B2p1B1/4P3/1Q6/PPP2PPP/2KR3R w k - 3 13'
@@ -99,6 +100,10 @@ export function Home({ theme, children }: { theme: BoardThemeSpec; children: Rea
           <div className="home-hero-copy">
             <h1>Review your chess game. Free.</h1>
             <p className="home-lede">See your best moves and your blunders, then try them again.</p>
+            <div className="home-ext">
+              <AddToChrome />
+              <span>Adds a Review button to Chess.com and Lichess</span>
+            </div>
           </div>
           <div className="home-import" ref={importRef}>{children}</div>
         </div>
@@ -168,6 +173,29 @@ export function Home({ theme, children }: { theme: BoardThemeSpec; children: Rea
         </div>
       </section>
 
+      <section className="home-band home-wrap" id="extension">
+        <div className="ext-card">
+          <div className="ext-copy">
+            <p className="ext-kicker">Chrome extension</p>
+            <h2>Review straight from Chess.com and Lichess</h2>
+            <p>When your game ends, an elo101 button appears on the page. One click opens the full review. It stays out of the way while you play, and it's free.</p>
+            <ol className="ext-steps">
+              <li><span>Add elo101 to Chrome</span></li>
+              <li><span>Finish a game on Chess.com or Lichess</span></li>
+              <li><span>Click <b>Review</b></span></li>
+            </ol>
+            <AddToChrome className="btn-lg" />
+          </div>
+          <div className="ext-demo" aria-hidden="true">
+            <div className="ext-demo-board">
+              <span className="ext-demo-result">You won · 1–0</span>
+            </div>
+            <div className="ext-pill"><img src={`${BASE}favicon.svg`} alt="" width={22} height={22} /><span>Review with Elo101</span><i>→</i></div>
+            <div className="ext-bubble">Nice win 🔥 Let's analyse</div>
+          </div>
+        </div>
+      </section>
+
       <section className="home-closing">
         <div className="home-wrap home-closing-in">
           <div>
@@ -186,6 +214,7 @@ export function Home({ theme, children }: { theme: BoardThemeSpec; children: Rea
           <a href={`${BASE}lichess-game-review/`}>Lichess review</a>
           <a href={`${BASE}chess-move-labels/`}>Move labels</a>
           <a href={`${BASE}how-it-works/`}>How it works</a>
+          <a href={STORE_URL} target="_blank" rel="noopener">Chrome extension</a>
           <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
           <a href={GITHUB} target="_blank" rel="noopener noreferrer">GitHub</a>
         </nav>

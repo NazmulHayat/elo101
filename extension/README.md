@@ -1,5 +1,7 @@
 # Elo101 Game Review extension
 
+**[Install from the Chrome Web Store →](https://chromewebstore.google.com/detail/elo101-game-review/hlhdgbelomlkdmiajjahhojecfikcnkl)**
+
 A Manifest V3 Chrome extension that places a small Elo101 button on Chess.com and Lichess. When you finish a game it pops a short chat bubble ("Nice win 🔥 · Let's analyse"), and it offers a free review beside Chess.com's "Daily limit reached" popup. It shows nothing at all while your game is in progress: it never reads the board or moves, only whether clocks are ticking, your own resign/abort buttons and the result text. Bubbles can be turned off in the toolbar popup. On a game page, the button opens Elo101 with the canonical game URL in the `game` query parameter. The toolbar popup offers the same handoff. On Chess.com it also passes a player name when found on the current page.
 
 ## Install locally
