@@ -5,7 +5,7 @@
 import { Chess } from 'chess.js'
 import { parseInfo } from './uci'
 
-export interface LiveEval { fen: string; cp: number | null; mate: number | null; depth: number }
+export interface LiveEval { fen: string; cp: number | null; mate: number | null; depth: number; best?: string }
 
 const LIVE_DEPTH = 20
 const MIN_SHOWN_DEPTH = 6 // shallower scores swing too much to be worth showing
@@ -59,6 +59,7 @@ export function createLiveEngine(url: string): LiveEngine {
         cp: info.kind === 'cp' ? sign * info.value : null,
         mate: info.kind === 'mate' ? sign * info.value : null,
         depth: info.depth,
+        best: uci,
       })
     }
   }

@@ -109,7 +109,8 @@ export default function App() {
   const [activeVariationId, setActiveVariationId] = useState<number | null>(null)
   const activeVariationIdRef = useRef<number | null>(null)
   activeVariationIdRef.current = activeVariationId
-  const [variationEval, setVariationEval] = useState<{ fen: string; cp: number | null; mate: number | null } | null>(null)
+  const [variationEval, setVariationEval] = useState<{ fen: string; cp: number | null; mate: number | null; best?: string } | null>(null)
+  const [lineHint, setLineHint] = useState(() => localStorage.getItem('elo101.lineHint') !== 'off')
   const attemptId = useRef(0)
   const variationId = useRef(0)
   const boardRef = useRef<HTMLElement>(null)
@@ -221,7 +222,7 @@ export default function App() {
   useEffect(() => {
     if (!evaluationFen) return
     let live = true
-    const stop = analyseLive(evaluationFen, (ev) => { if (live) setVariationEval({ fen: ev.fen, cp: ev.cp, mate: ev.mate }) })
+    const stop = analyseLive(evaluationFen, (ev) => { if (live) setVariationEval({ fen: ev.fen, cp: ev.cp, mate: ev.mate, best: ev.best }) })
     return () => { live = false; stop() }
   }, [evaluationFen])
 
@@ -541,6 +542,16 @@ export default function App() {
     }
   }
 
+  const engineBest = useMemo(() => {
+    if (!variationFen || !variationEval?.best || variationEval.fen !== variationFen) return null
+    const uci = variationEval.best
+    try {
+      const m = new Chess(variationFen).move({ from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
+      return { uci, san: m.san, side: m.color === 'w' ? 'White' : 'Black' }
+    } catch { return null }
+  }, [variationFen, variationEval])
+  const toggleLineHint = () => setLineHint((on) => { localStorage.setItem('elo101.lineHint', on ? 'off' : 'on'); track('line_hint_toggled', { on: !on }); return !on })
+
   const inReview = stage === 'review' && review
   const canRetry = !!move && RETRY_LABELS.includes(move.ep_label)
   const canShowBest = !!move && !TOP_LABELS.includes(move.ep_label) && !!move.best_from && !!move.best_to
@@ -552,6 +563,8 @@ export default function App() {
   if (activeVariation) {
     const next = activeVariation.moves[activeVariation.cursor]
     arrow = next ? { from: next.uci.slice(0, 2), to: next.uci.slice(2, 4) } : null
+    // At the end of your line, point at the engine's top move for whoever is to move (often the opponent's best reply).
+    if (!next && lineHint && engineBest) arrow = { from: engineBest.uci.slice(0, 2), to: engineBest.uci.slice(2, 4), color: 'var(--c-best)' }
   }
 
   const boardInput: BoardInput | null = inReview && activeVariation
@@ -659,6 +672,9 @@ export default function App() {
             <div className="variation-panel">
               <h2>{activeVariation.title ?? 'Your line'} <span className="variation-position">{activeVariation.cursor} / {activeVariation.moves.length}</span></h2>
               <p>{activeVariation.explanation}</p>
+              {activeVariation.cursor === activeVariation.moves.length && lineHint && (
+                <p className="line-hint" data-testid="line-hint">{engineBest ? <>Engine’s top move for {engineBest.side}: <strong>{engineBest.san}</strong></> : 'Engine is thinking…'}</p>
+              )}
               <div className="coach-actions variation-actions">
                 <button type="button" className="btn btn-sm var-step" data-testid="variation-prev" aria-label="Previous move in line" title="Previous (←)" disabled={activeVariation.cursor === 0} onClick={() => variationStep(activeVariation.cursor - 1)}>
                   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -667,6 +683,9 @@ export default function App() {
                   <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </button>
                 {retry && <button type="button" className="btn btn-sm" onClick={() => { setActiveVariationId(null); setRetry((cur) => cur && review ? { ...cur, phase: 'try', fen: review.moves[cur.ply - 1].fen_before, tries: cur.phase === 'wrong' ? cur.tries : 0, result: undefined, attempt: undefined, attemptFen: undefined } : cur) }}>Back to puzzle</button>}
+                <button type="button" className="btn btn-sm act-best" data-testid="line-hint-toggle" aria-pressed={lineHint} title="Show the engine’s top move as a green arrow" onClick={toggleLineHint}>
+                  <span className="act-star" aria-hidden>★</span> {lineHint ? 'Hide engine move' : 'Show engine move'}
+                </button>
                 <button type="button" className="btn btn-sm" data-testid="variation-back" onClick={() => go(activeVariation.anchorPly)}>Back to game</button>
               </div>
             </div>

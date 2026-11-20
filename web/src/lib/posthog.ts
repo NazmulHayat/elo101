@@ -53,6 +53,7 @@ export type TrackEvent =
   | 'review_opened'
   | 'practice_started'
   | 'explain_requested'
+  | 'line_hint_toggled'
 
 export function track(event: TrackEvent, props?: Record<string, string | number | boolean | null | undefined>) {
   if (enabled) posthog.capture(event, props)

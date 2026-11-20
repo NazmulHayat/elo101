@@ -249,6 +249,10 @@ button:active:not(:disabled) { transform: translateY(1px); }
 }
 .ai-error { color: var(--error-text); }
 .coach-actions { clear: both; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.line-hint { margin-top: 6px; color: var(--c-best); font-size: 13px; }
+.line-hint strong { font-weight: 800; }
+.variation-actions .act-best .act-star { color: var(--c-best); }
+.variation-actions .act-best[aria-pressed="true"] { background: color-mix(in srgb, var(--c-best) 20%, var(--btn)); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c-best) 55%, transparent); }
 .best-position-note { flex-basis: 100%; color: var(--c-best); font-size: 12px; font-weight: 700; }
 .review-actions { flex: none; display: flex; gap: 8px; height: 48px; margin: 0 16px 16px; }
 .review-actions .btn { height: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; }
