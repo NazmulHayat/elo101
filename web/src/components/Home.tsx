@@ -180,7 +180,15 @@ export function Home({ theme, children }: { theme: BoardThemeSpec; children: Rea
 
       <footer className="home-footer home-wrap">
         <span>elo101 is free and open source.</span>
-        <nav><a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a><a href={GITHUB} target="_blank" rel="noopener noreferrer">GitHub</a></nav>
+        <nav aria-label="Guides and links">
+          <a href={`${BASE}free-chess-game-review/`}>Free game review</a>
+          <a href={`${BASE}chess-com-game-review/`}>Chess.com review</a>
+          <a href={`${BASE}lichess-game-review/`}>Lichess review</a>
+          <a href={`${BASE}chess-move-labels/`}>Move labels</a>
+          <a href={`${BASE}how-it-works/`}>How it works</a>
+          <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy</a>
+          <a href={GITHUB} target="_blank" rel="noopener noreferrer">GitHub</a>
+        </nav>
       </footer>
     </div>
   )
