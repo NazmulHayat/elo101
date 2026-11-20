@@ -2,7 +2,9 @@ const Elo101GameLink = (() => {
   const APP_URL = "https://elo101.vercel.app/";
   // Eight-letter Lichess pages that look like game ids.
   const LICHESS_PAGES = new Set(["analysis", "practice", "training", "tutorial", "streamer", "features",
-    "password", "contacts", "calendar", "insights", "settings", "playlist"]);
+    "password", "contacts", "calendar", "insights", "settings", "playlist",
+    // Twelve letters, which would look like a game id plus a player id.
+    "subscription", "notification", "broadcasters"]);
 
   function canonicalGameUrl(rawUrl) {
     let url;
@@ -22,8 +24,11 @@ const Elo101GameLink = (() => {
     }
 
     if (host === "lichess.org") {
-      const match = url.pathname.match(/^\/(?:game\/)?([a-z0-9]{8})(?:\/[^/]*)?\/?$/i);
-      if (!match || LICHESS_PAGES.has(match[1].toLowerCase())) return null;
+      // /<id>, /<id>/black, /<id><playerId> (a player's own link: 8 + 4 characters) and the same under
+      // /game/, which is where Lichess now redirects player links (e.g. /game/qgA6NdTezHzz).
+      const match = url.pathname.match(/^\/(?:game\/)?([a-z0-9]{8})(?:[a-z0-9]{4})?(?:\/[^/]*)?\/?$/i);
+      const segment = url.pathname.replace(/^\/(?:game\/)?/, "").split("/")[0].toLowerCase();
+      if (!match || LICHESS_PAGES.has(match[1].toLowerCase()) || LICHESS_PAGES.has(segment)) return null;
       return `https://lichess.org/${match[1]}`;
     }
 

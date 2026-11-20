@@ -183,7 +183,8 @@ export async function gameFromUrl(rawUrl: string, user?: string, f: Fetch = fetc
 
   const host = url.hostname.toLowerCase().replace(/^www\./, '')
   if (host === 'lichess.org') {
-    const path = url.pathname.match(/^\/([a-zA-Z0-9]{8,12})\/?$/)
+    // /<id>, /<id><playerId>, /<id>/white|black, and the same under /game/ (where Lichess now redirects player links).
+    const path = url.pathname.match(/^\/(?:game\/)?([a-zA-Z0-9]{8})(?:[a-zA-Z0-9]{4})?(?:\/(?:white|black))?\/?$/)
     const id = path?.[1]
     if (!id || !/^[a-zA-Z0-9]{8,12}$/.test(id)) throw new Error('That doesn’t look like a Lichess game URL.')
     const response = await get(f, `https://lichess.org/game/export/${encodeURIComponent(id)}?clocks=true&evals=false`, 'Lichess', {

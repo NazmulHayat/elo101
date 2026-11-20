@@ -130,6 +130,14 @@ describe('helpers', () => {
     await expect(gameFromUrl('not a url')).rejects.toThrow(/valid Chess.com or Lichess/)
     await expect(gameFromUrl('https://example.com/abcdefgh')).rejects.toThrow(/Only Chess.com and Lichess/)
     await expect(gameFromUrl('https://lichess.org/abcdefgh/other')).rejects.toThrow(/Lichess game URL/)
+  })
+
+  it('accepts Lichess player links, /game/ links and colour links', async () => {
+    for (const link of ['https://lichess.org/game/abcdefghWXYZ', 'https://lichess.org/abcdefghWXYZ', 'https://lichess.org/abcdefgh/black', 'https://lichess.org/game/abcdefgh/white#68']) {
+      const f = vi.fn().mockResolvedValue(new Response('[Result "1-0"]\n\n1. e4 e5 1-0', { status: 200 }))
+      await gameFromUrl(link, undefined, f as unknown as typeof fetch)
+      expect(f.mock.calls[0][0]).toBe('https://lichess.org/game/export/abcdefgh?clocks=true&evals=false')
+    }
     await expect(gameFromUrl('https://www.chess.com/game/live/123/extra', 'alice')).rejects.toThrow(/Chess.com game URL/)
   })
 
