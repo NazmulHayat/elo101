@@ -17,6 +17,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.ticker  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -154,6 +155,63 @@ def benchmark(md: str, theme: dict, out: Path) -> None:
     plt.close(fig)
 
 
+# Morphy's Opera Game before 13.Rxd7 (Stockfish +5.2), 10-minute game, from the shipped Chances model
+# (see docs/engineering-log.md, "Numbers on the page are real").
+SAME_POSITION = [("Two 800-rated players", 69), ("Two 1600-rated players", 84), ("Two 2400-rated players", 93)]
+
+
+def same_position(theme: dict, out: Path) -> None:
+    fig, ax = plt.subplots(figsize=(8.5, 2.9))
+    labels = [label for label, _ in SAME_POSITION]
+    vals = [v for _, v in SAME_POSITION]
+    ax.barh(labels, [100] * len(vals), 0.56, color=theme["grid"], alpha=0.5)
+    ax.barh(labels, vals, 0.56, color=[BASE, WEAK, OURS])
+    for y, v in enumerate(vals):
+        ax.text(v - 1.5, y, f"{v}%", va="center", ha="right", fontsize=12, color="#ffffff", weight="bold")
+    ax.set_xlim(0, 100)
+    ax.set_xticks([])
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.tick_params(axis="y", length=0)
+    ax.set_title("Same position, same engine score (+5.2), different players")
+    fig.text(0.01, 0.02, "White's chances from elo101's Chances model, 10-minute game. A plain engine score is the same for all three.",
+             fontsize=9, color=theme["muted"])
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    fig.savefig(out, dpi=200)
+    plt.close(fig)
+
+
+# Sizes from docs/methodology.md ("Data") and the evaluation report.
+FUNNEL = [
+    ("Lichess games in one monthly dump", 84.6e6, "84.6M games"),
+    ("Positions Lichess had already analysed", 46.1e6, "46.1M positions"),
+    ("Used to pre-train the model", 12e6, "12M positions"),
+    ("Scored with our own Stockfish (clean set)", 213e3, "213k positions"),
+    ("Held-out test set (unseen games)", 31_961, "31,961 positions"),
+]
+
+
+def data_funnel(theme: dict, out: Path) -> None:
+    fig, ax = plt.subplots(figsize=(8.5, 3.6))
+    labels = [label for label, *_ in FUNNEL][::-1]
+    vals = [v for _, v, _ in FUNNEL][::-1]
+    tags = [t for *_, t in FUNNEL][::-1]
+    colors = [OURS if i == 0 else BASE for i in range(len(vals))]
+    ax.barh(labels, vals, 0.6, color=colors)
+    ax.set_xscale("log")
+    ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
+    for y, (v, t) in enumerate(zip(vals, tags)):
+        ax.text(v * 1.15, y, t, va="center", fontsize=10, color=theme["fg"], weight="bold")
+    ax.set_xlim(1e4, 1e9)
+    ax.set_xticks([])
+    ax.spines["bottom"].set_visible(False)
+    ax.tick_params(axis="y", length=0)
+    ax.set_title("From one Lichess dump to a test set (log scale)")
+    fig.tight_layout()
+    fig.savefig(out, dpi=200)
+    plt.close(fig)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--report", type=Path, default=REPO / "ep_model" / "models" / "ep_eval_report.json")
@@ -168,6 +226,8 @@ def main() -> None:
         results(report, theme, args.out_dir / f"results-{name}.png")
         calibration(report, theme, args.out_dir / f"calibration-{name}.png")
         benchmark(md, theme, args.out_dir / f"benchmark-{name}.png")
+        same_position(theme, args.out_dir / f"same-position-{name}.png")
+        data_funnel(theme, args.out_dir / f"data-funnel-{name}.png")
     print(f"wrote figures to {args.out_dir}")
 
 
