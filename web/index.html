@@ -11,15 +11,47 @@
     <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400..800&family=Geist:wght@500..800&family=Noto+Sans+Symbols+2&display=swap" rel="stylesheet" />
     <meta name="description" content="Free chess game review in your browser. Analyze Chess.com, Lichess or PGN games with Stockfish, explore move labels and accuracy, and retry mistakes. Your games stay on your device." />
     <meta name="theme-color" content="#1c1b19" />
+    <link rel="canonical" href="https://elo101.vercel.app/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta property="og:title" content="elo101 · Free chess game review" />
     <meta property="og:description" content="Understand every move. Review accuracy, explore key moments and retry mistakes with Stockfish, right in your browser." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://elo101.vercel.app/" />
     <meta property="og:site_name" content="elo101" />
-    <title>elo101 · Free Chess Game Review</title>
+    <meta property="og:image" content="https://elo101.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="elo101: review your chess game for free, one click from Chess.com and Lichess" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="elo101 · Free chess game review" />
+    <meta name="twitter:description" content="Understand every move. Review accuracy, explore key moments and retry mistakes with Stockfish, right in your browser." />
+    <meta name="twitter:image" content="https://elo101.vercel.app/og-image.png" />
+    <title>elo101 · Free Chess Game Review for Chess.com and Lichess Games</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "elo101",
+        "url": "https://elo101.vercel.app/",
+        "description": "Free chess game review in your browser. Analyze Chess.com, Lichess or PGN games with Stockfish, see every move labelled from Brilliant to Blunder, check accuracy and retry your mistakes.",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any (runs in a web browser)",
+        "browserRequirements": "Requires JavaScript and WebAssembly",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "image": "https://elo101.vercel.app/og-image.png",
+        "sameAs": ["https://github.com/NazmulHayat/elo101"]
+      }
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Shown until the app loads (and to crawlers that don't run JavaScript); React replaces it. -->
+      <main style="max-width:640px;margin:15vh auto;padding:0 16px;font-family:Figtree,system-ui,sans-serif">
+        <h1>elo101: free chess game review</h1>
+        <p>Review your Chess.com, Lichess or PGN games for free. Stockfish runs in your browser to label every move from Brilliant to Blunder for your rating, show accuracy and a win-chances graph, and let you retry your mistakes. No account needed.</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
